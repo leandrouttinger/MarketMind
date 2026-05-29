@@ -15,9 +15,10 @@ const TEXT = '#FFFFFF';
 const MUTED = '#6B7280';
 
 const LANGS: { code: Language; flag: string; name: string; sub: string }[] = [
-  { code: 'en', flag: '🇬🇧', name: 'English',  sub: 'Continue in English'  },
-  { code: 'de', flag: '🇩🇪', name: 'Deutsch',  sub: 'Weiter auf Deutsch'   },
-  { code: 'es', flag: '🇪🇸', name: 'Español',  sub: 'Continuar en español' },
+  { code: 'en', flag: '🇬🇧', name: 'English',            sub: 'Continue in English'      },
+  { code: 'de', flag: '🇩🇪', name: 'Deutsch',            sub: 'Weiter auf Deutsch'       },
+  { code: 'es', flag: '🇪🇸', name: 'Español',            sub: 'Continuar en español'     },
+  { code: 'pt', flag: '🇧🇷', name: 'Português (Brasil)', sub: 'Continuar em português'   },
 ];
 
 interface Props {
