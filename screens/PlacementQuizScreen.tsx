@@ -169,17 +169,15 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
 
           <View style={styles.introTextBlock}>
             <Text style={styles.introReady}>
-              Bist du ready,{'\n'}{userName}?
+              Ready,{'\n'}{userName}?
             </Text>
             <Text style={styles.introDesc}>
-              5 Fragen. 2 Minuten. Wir finden heraus{'\n'}
-              wo du wirklich stehst — und stellen deinen{'\n'}
-              Lernpfad genau darauf ein.
+              5 questions. No stress.{'\n'}We find your level.
             </Text>
           </View>
 
           <View style={styles.introBadges}>
-            {['5 Questions', '~2 min', 'No pressure'].map((b, i) => (
+            {['5 Questions', '2 min', 'No stress'].map((b, i) => (
               <View key={i} style={styles.badge}>
                 <Text style={styles.badgeText}>{b}</Text>
               </View>

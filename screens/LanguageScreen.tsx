@@ -1,7 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, Animated,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -14,27 +12,54 @@ const BORDER = '#2C2C2E';
 const TEXT = '#FFFFFF';
 const MUTED = '#6B7280';
 
-const LANGS: { code: Language; flag: string; name: string; sub: string }[] = [
-  { code: 'en', flag: '🇬🇧', name: 'English',            sub: 'Continue in English'      },
-  { code: 'de', flag: '🇩🇪', name: 'Deutsch',            sub: 'Weiter auf Deutsch'       },
-  { code: 'es', flag: '🇪🇸', name: 'Español',            sub: 'Continuar en español'     },
-  { code: 'pt', flag: '🇧🇷', name: 'Português (Brasil)', sub: 'Continuar em português'   },
+const LANGS: { code: Language; flag: string; name: string }[] = [
+  { code: 'en', flag: '🇬🇧', name: 'English'            },
+  { code: 'de', flag: '🇩🇪', name: 'Deutsch'            },
+  { code: 'es', flag: '🇪🇸', name: 'Español'            },
+  { code: 'pt', flag: '🇧🇷', name: 'Português'          },
 ];
 
-interface Props {
-  onContinue: () => void;
+// Placeholder — swap with Banana AI mascot image later
+function MascotPlaceholder() {
+  const pulse = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.05, duration: 1200, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1,    duration: 1200, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  return (
+    <Animated.View style={[ph.box, { transform: [{ scale: pulse }] }]}>
+      <Text style={ph.icon}>◈</Text>
+      <Text style={ph.label}>MASCOT</Text>
+    </Animated.View>
+  );
 }
+const ph = StyleSheet.create({
+  box: {
+    width: 100, height: 100, borderRadius: 28,
+    backgroundColor: `${BRAND}0A`, borderWidth: 1.5,
+    borderColor: `${BRAND}30`, alignItems: 'center',
+    justifyContent: 'center', gap: 4,
+  },
+  icon:  { fontSize: 36, color: `${BRAND}60` },
+  label: { color: `${BRAND}70`, fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
+});
+
+interface Props { onContinue: () => void }
 
 export default function LanguageScreen({ onContinue }: Props) {
   const { setLanguage } = useLanguage();
   const [selected, setSelected] = useState<Language>('en');
-  const fadeIn = useRef(new Animated.Value(0)).current;
-  const slideUp = useRef(new Animated.Value(30)).current;
+  const fadeIn  = useRef(new Animated.Value(0)).current;
+  const slideUp = useRef(new Animated.Value(24)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeIn,  { toValue: 1, duration: 700, useNativeDriver: true }),
-      Animated.spring(slideUp, { toValue: 0, useNativeDriver: true, tension: 60, friction: 10 }),
+      Animated.timing(fadeIn,  { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.spring(slideUp, { toValue: 0, useNativeDriver: true, tension: 70, friction: 11 }),
     ]).start();
   }, []);
 
@@ -53,18 +78,13 @@ export default function LanguageScreen({ onContinue }: Props) {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Animated.View style={[styles.inner, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
 
-        {/* Logo */}
-        <View style={styles.logoWrap}>
-          <View style={styles.logo}>
-            <Text style={styles.logoText}>MM</Text>
+        {/* Mascot placeholder */}
+        <View style={styles.top}>
+          <MascotPlaceholder />
+          <View style={styles.headingBlock}>
+            <Text style={styles.title}>Pick your language.</Text>
+            <Text style={styles.subtitle}>Switch anytime in settings.</Text>
           </View>
-          <Text style={styles.appName}>MarketMind</Text>
-        </View>
-
-        {/* Heading */}
-        <View style={styles.headingBlock}>
-          <Text style={styles.title}>Choose your language</Text>
-          <Text style={styles.subtitle}>You can change this anytime in settings.</Text>
         </View>
 
         {/* Language cards */}
@@ -79,12 +99,9 @@ export default function LanguageScreen({ onContinue }: Props) {
                 activeOpacity={0.75}
               >
                 <Text style={styles.flag}>{lang.flag}</Text>
-                <View style={styles.cardText}>
-                  <Text style={[styles.langName, isActive && styles.langNameActive]}>
-                    {lang.name}
-                  </Text>
-                  <Text style={styles.langSub}>{lang.sub}</Text>
-                </View>
+                <Text style={[styles.langName, isActive && styles.langNameActive]}>
+                  {lang.name}
+                </Text>
                 <View style={[styles.radio, isActive && styles.radioActive]}>
                   {isActive && <View style={styles.radioDot} />}
                 </View>
@@ -93,9 +110,8 @@ export default function LanguageScreen({ onContinue }: Props) {
           })}
         </View>
 
-        {/* CTA */}
         <TouchableOpacity style={styles.btn} onPress={handleContinue} activeOpacity={0.85}>
-          <Text style={styles.btnText}>Continue →</Text>
+          <Text style={styles.btnText}>Let's go</Text>
         </TouchableOpacity>
 
       </Animated.View>
@@ -105,47 +121,36 @@ export default function LanguageScreen({ onContinue }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  inner: { flex: 1, paddingHorizontal: 24, justifyContent: 'center', gap: 36 },
+  inner: { flex: 1, paddingHorizontal: 24, justifyContent: 'center', gap: 32 },
 
-  logoWrap: { alignItems: 'center', gap: 10 },
-  logo: {
-    width: 72, height: 72, borderRadius: 20,
-    backgroundColor: BRAND, alignItems: 'center', justifyContent: 'center',
-    shadowColor: BRAND, shadowOpacity: 0.5, shadowRadius: 16,
-    shadowOffset: { width: 0, height: 0 }, elevation: 12,
-  },
-  logoText: { color: '#000', fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
-  appName: { color: TEXT, fontSize: 22, fontWeight: '800', letterSpacing: -0.3 },
-
-  headingBlock: { gap: 6 },
-  title: { color: TEXT, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+  top: { alignItems: 'center', gap: 20 },
+  headingBlock: { alignItems: 'center', gap: 6 },
+  title:    { color: TEXT,  fontSize: 26, fontWeight: '800', letterSpacing: -0.4 },
   subtitle: { color: MUTED, fontSize: 14 },
 
-  cards: { gap: 12 },
+  cards: { gap: 10 },
   card: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: SURFACE, borderRadius: 18, padding: 18,
+    backgroundColor: SURFACE, borderRadius: 16, padding: 16,
     borderWidth: 1.5, borderColor: BORDER,
   },
   cardActive: { borderColor: BRAND, backgroundColor: `${BRAND}0D` },
-  flag: { fontSize: 32 },
-  cardText: { flex: 1, gap: 2 },
-  langName: { color: TEXT, fontSize: 17, fontWeight: '700' },
-  langNameActive: { color: BRAND },
-  langSub: { color: MUTED, fontSize: 12 },
+  flag:            { fontSize: 28 },
+  langName:        { flex: 1, color: TEXT,  fontSize: 16, fontWeight: '600' },
+  langNameActive:  { color: BRAND },
   radio: {
     width: 22, height: 22, borderRadius: 11,
     borderWidth: 2, borderColor: BORDER,
     alignItems: 'center', justifyContent: 'center',
   },
   radioActive: { borderColor: BRAND },
-  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: BRAND },
+  radioDot:    { width: 10, height: 10, borderRadius: 5, backgroundColor: BRAND },
 
   btn: {
     backgroundColor: BRAND, borderRadius: 16,
     paddingVertical: 18, alignItems: 'center',
-    shadowColor: BRAND, shadowOpacity: 0.3,
+    shadowColor: BRAND, shadowOpacity: 0.25,
     shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
   },
-  btnText: { color: '#000', fontSize: 16, fontWeight: '900', letterSpacing: 0.2 },
+  btnText: { color: '#000', fontSize: 16, fontWeight: '900', letterSpacing: 0.3 },
 });

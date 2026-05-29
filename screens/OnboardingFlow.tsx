@@ -82,7 +82,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     type: 'single',
-    title: 'Why did you download\nMarketMind?',
+    title: 'Why MarketMind?',
     options: [
       { id: 'a', label: 'Learn how to invest' },
       { id: 'b', label: 'Understand the markets' },
@@ -92,7 +92,7 @@ const STEPS: Step[] = [
   },
   {
     type: 'single',
-    title: 'How did you hear\nabout us?',
+    title: 'How did you\nfind us?',
     options: [
       { id: 'a', label: 'Instagram / Social Media' },
       { id: 'b', label: 'Friend or family' },
@@ -102,45 +102,45 @@ const STEPS: Step[] = [
   },
   {
     type: 'single',
-    title: 'How would you rate\nyour finance knowledge?',
+    title: 'Your finance\nlevel right now?',
     options: [
-      { id: 'a', label: 'Beginner',     sub: "I'm just getting started" },
-      { id: 'b', label: 'Basic',        sub: 'I know the fundamentals' },
-      { id: 'c', label: 'Intermediate', sub: 'I understand stocks & markets' },
-      { id: 'd', label: 'Advanced',     sub: 'I trade or invest actively' },
+      { id: 'a', label: 'Beginner',     sub: 'Just getting started' },
+      { id: 'b', label: 'Basic',        sub: 'Know the basics' },
+      { id: 'c', label: 'Intermediate', sub: 'Stocks and markets' },
+      { id: 'd', label: 'Advanced',     sub: 'I actively trade' },
     ],
   },
   {
     type: 'transition',
-    title: "You're on the right path.\nLet's make it official.",
-    subtitle: "A quick 5-question test reveals exactly where you stand — and unlocks your personal learning path.",
+    title: 'Good instincts.\nNow prove it.',
+    subtitle: '5 questions. 2 minutes. Your level, locked in.',
   },
   {
     type: 'multi',
-    title: 'What do you want to\nachieve with finance?',
-    subtitle: 'Select all that apply',
+    title: 'What is your\nmain goal?',
+    subtitle: 'Pick all that fit',
     options: [
       { id: 'a', label: 'Build long-term wealth' },
       { id: 'b', label: 'Start investing smart' },
       { id: 'c', label: 'Make better money decisions' },
-      { id: 'd', label: 'Career or education goals' },
-      { id: 'e', label: "It's fun & I love it" },
+      { id: 'd', label: 'Career or education' },
+      { id: 'e', label: 'I just love finance' },
     ],
   },
   {
     type: 'single',
-    title: 'How much time can\nyou spare daily?',
+    title: 'Daily time\ncommitment?',
     options: [
-      { id: 'a', label: '5 minutes',  sub: 'Quick daily boost — always enough' },
-      { id: 'b', label: '10 minutes', sub: 'Steady progress, every single day' },
-      { id: 'c', label: '15 minutes', sub: 'Solid learning, real results' },
-      { id: 'd', label: '20+ minutes', sub: 'Full focus — you mean business' },
+      { id: 'a', label: '5 minutes',   sub: 'Quick wins every day' },
+      { id: 'b', label: '10 minutes',  sub: 'Steady and consistent' },
+      { id: 'c', label: '15 minutes',  sub: 'Serious progress' },
+      { id: 'd', label: '20+ minutes', sub: 'All in' },
     ],
   },
   {
     type: 'notifications',
-    title: "The #1 reason people\nfail? They forget.",
-    subtitle: "3× more likely to hit your goals with daily reminders. Takes 2 seconds to enable.",
+    title: "Streaks die\nin silence.",
+    subtitle: 'One reminder. That is all it takes.',
   },
 ];
 
@@ -220,8 +220,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
               <View style={styles.transitionTextBlock}>
                 <Text style={styles.transitionName}>Ready, {userName}?</Text>
                 <Text style={styles.transitionDesc}>
-                  Most people guess their level wrong.{'\n'}
-                  5 questions. No pressure. Let's find out.
+                  5 questions. No pressure.
                 </Text>
               </View>
             </View>
