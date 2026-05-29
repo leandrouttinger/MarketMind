@@ -3,6 +3,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LanguageProvider } from './contexts/LanguageContext';
 import SplashScreen from './screens/SplashScreen';
+import LanguageScreen from './screens/LanguageScreen';
 import NameScreen from './screens/NameScreen';
 import OnboardingFlow from './screens/OnboardingFlow';
 import PlacementQuizScreen from './screens/PlacementQuizScreen';
@@ -10,7 +11,7 @@ import MainTabs from './screens/MainTabs';
 import { UserLevel } from './utils/questionPicker';
 import { loadState, saveState } from './utils/storage';
 
-type Screen = 'loading' | 'splash' | 'name' | 'onboarding' | 'placement' | 'main';
+type Screen = 'loading' | 'language' | 'splash' | 'name' | 'onboarding' | 'placement' | 'main';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('loading');
@@ -38,7 +39,7 @@ export default function App() {
         setQuizDoneToday(saved.quizDoneToday);
         setScreen('main');
       } else {
-        setScreen('splash');
+        setScreen('language');
       }
     });
   }, []);
@@ -53,6 +54,9 @@ export default function App() {
 
   const renderScreen = () => {
     switch (screen) {
+      case 'language':
+        return <LanguageScreen onContinue={() => setScreen('splash')} />;
+
       case 'splash':
         return <SplashScreen onStart={() => setScreen('name')} />;
 
