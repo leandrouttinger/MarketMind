@@ -4,8 +4,8 @@ import { UserLevel } from './questionPicker';
 // ─── FÜLLE DIESE ZWEI WERTE EIN ──────────────────────────────────────────────
 // 1. Gehe zu supabase.com → dein Projekt → Settings → API
 // 2. Kopiere "Project URL" und "anon public" key
-const SUPABASE_URL  = 'https://zwjujydrbzqvtczvqwva.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_t4L9xCVLFHRfvCADdA18oA_TG-pWZM1';
+const SUPABASE_URL  = 'https://evmznabsffecwmwfcitc.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_EoNje6Kk7il4nYH4hh7weg_0TfnxP3C';
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
