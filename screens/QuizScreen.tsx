@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  Dimensions,
+  Animated,
+  ScrollView,
+  Platform,
 } from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import { getDailyQuestions, getDailyChallenge, UserLevel } from '../utils/questionPicker';
+import { Question } from '../data/questions';
 
 const BRAND = '#10B981';
 const BG = '#0F0F0F';
@@ -17,166 +19,222 @@ const SURFACE = '#1C1C1E';
 const BORDER = '#2C2C2E';
 const TEXT = '#FFFFFF';
 const MUTED = '#8E8E93';
+const ERROR = '#FF453A';
 
-const QUESTION = {
-  category: 'Basics',
-  number: 1,
-  total: 10,
-  text: 'Was bezeichnet man als "Bull Market"?',
-  options: [
-    { id: 'A', text: 'Ein Markt mit stark fallenden Kursen' },
-    { id: 'B', text: 'Ein Markt mit steigenden Kursen über Zeit' },
-    { id: 'C', text: 'Ein Markt mit extremer Volatilität' },
-    { id: 'D', text: 'Ein Markt mit niedrigem Handelsvolumen' },
-  ],
-  correct: 'B',
-};
+interface Props {
+  level: UserLevel;
+  goals?: string[];
+  streak: number;
+  isDailyChallenge?: boolean;
+  onComplete: (score: number, total: number) => void;
+  onExit: () => void;
+}
 
-type OptionState = 'idle' | 'correct' | 'wrong' | 'dimmed';
-
-export default function QuizScreen() {
+export default function QuizScreen({ level, goals = [], streak, isDailyChallenge = false, onComplete, onExit }: Props) {
+  const [questions] = useState<Question[]>(() =>
+    isDailyChallenge ? getDailyChallenge(5) : getDailyQuestions(level, goals, 5)
+  );
+  const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const streak = 3;
-  const progress = QUESTION.number / QUESTION.total;
+  const [score, setScore] = useState(0);
 
-  const handleSelect = (id: string) => {
+  // Animations
+  const sheetY = useRef(new Animated.Value(300)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const correctScale = useRef(new Animated.Value(1)).current;
+  const cardOpacity = useRef(new Animated.Value(1)).current;
+
+  const question = questions[index];
+  const progress = (index + 1) / questions.length;
+  const isCorrect = selected === question?.correct;
+
+  const showFeedback = () => {
+    Animated.parallel([
+      Animated.spring(sheetY, { toValue: 0, useNativeDriver: true, tension: 60, friction: 10 }),
+      Animated.timing(overlayOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const hideFeedback = (cb: () => void) => {
+    Animated.parallel([
+      Animated.timing(sheetY, { toValue: 300, duration: 200, useNativeDriver: true }),
+      Animated.timing(overlayOpacity, { toValue: 0, duration: 150, useNativeDriver: true }),
+      Animated.timing(cardOpacity, { toValue: 0, duration: 180, useNativeDriver: true }),
+    ]).start(() => {
+      cardOpacity.setValue(0);
+      cb();
+      Animated.timing(cardOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    });
+  };
+
+  const handleSelect = async (id: string) => {
     if (revealed) return;
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelected(id);
     setRevealed(true);
+    const correct = id === question.correct;
+    if (correct) {
+      setScore(s => s + 1);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Animated.sequence([
+        Animated.spring(correctScale, { toValue: 1.08, useNativeDriver: true, tension: 200 }),
+        Animated.spring(correctScale, { toValue: 1, useNativeDriver: true, tension: 200 }),
+      ]).start();
+    } else {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+    setTimeout(showFeedback, 300);
   };
 
-  const getOptionState = (id: string): OptionState => {
-    if (!revealed) return 'idle';
-    if (id === QUESTION.correct) return 'correct';
-    if (id === selected) return 'wrong';
-    return 'dimmed';
+  const handleNext = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const next = index + 1;
+    if (next >= questions.length) {
+      hideFeedback(() => onComplete(score + (isCorrect ? 1 : 0), questions.length));
+    } else {
+      hideFeedback(() => {
+        setIndex(next);
+        setSelected(null);
+        setRevealed(false);
+        sheetY.setValue(300);
+        overlayOpacity.setValue(0);
+      });
+    }
   };
 
-  const optionStyles = (id: string) => {
-    const state = getOptionState(id);
-    return [
-      styles.option,
-      state === 'correct' && styles.optionCorrect,
-      state === 'wrong' && styles.optionWrong,
-      state === 'dimmed' && styles.optionDimmed,
-    ];
-  };
-
-  const labelStyles = (id: string) => {
-    const state = getOptionState(id);
-    return [
-      styles.optionLabel,
-      state === 'correct' && styles.labelCorrect,
-      state === 'wrong' && styles.labelWrong,
-    ];
-  };
+  if (!question) return null;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={BG} />
-
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={onExit} style={styles.exitBtn}>
+          <Text style={styles.exitText}>✕</Text>
+        </TouchableOpacity>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          <Animated.View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
-        <View style={styles.streakPill}>
+        <View style={styles.streakBadge}>
           <Text style={styles.streakText}>🔥 {streak}</Text>
         </View>
       </View>
 
-      {/* Body */}
-      <View style={styles.body}>
-        {/* Meta */}
-        <View style={styles.meta}>
-          <View style={styles.categoryPill}>
-            <Text style={styles.categoryText}>{QUESTION.category.toUpperCase()}</Text>
-          </View>
-          <Text style={styles.questionCount}>
-            {QUESTION.number} / {QUESTION.total}
-          </Text>
-        </View>
-
-        {/* Question */}
-        <Text style={styles.questionText}>{QUESTION.text}</Text>
-
-        {/* Options */}
-        <View style={styles.options}>
-          {QUESTION.options.map((opt) => (
-            <TouchableOpacity
-              key={opt.id}
-              style={optionStyles(opt.id)}
-              onPress={() => handleSelect(opt.id)}
-              activeOpacity={0.75}
-            >
-              <View style={labelStyles(opt.id)}>
-                <Text style={styles.labelChar}>{opt.id}</Text>
-              </View>
-              <Text style={styles.optionText}>{opt.text}</Text>
-              {revealed && opt.id === QUESTION.correct && (
-                <Text style={styles.checkmark}>✓</Text>
-              )}
-              {revealed && opt.id === selected && opt.id !== QUESTION.correct && (
-                <Text style={styles.cross}>✕</Text>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Feedback */}
-        {revealed && (
-          <View
-            style={[
-              styles.feedbackBanner,
-              selected === QUESTION.correct
-                ? styles.feedbackCorrect
-                : styles.feedbackWrong,
-            ]}
-          >
-            <Text style={styles.feedbackText}>
-              {selected === QUESTION.correct
-                ? '🎯 Richtig! Bull Market = steigende Kurse.'
-                : `✗ Falsch. Die richtige Antwort ist B.`}
+      {/* Question card */}
+      <Animated.View style={[styles.questionArea, { opacity: cardOpacity }]}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.questionContent}>
+          <View style={styles.meta}>
+            <View style={styles.categoryPill}>
+              <Text style={styles.categoryText}>{question.category.toUpperCase()}</Text>
+            </View>
+            <Text style={styles.difficultyDots}>
+              {'●'.repeat(question.difficulty)}{'○'.repeat(3 - question.difficulty)}
             </Text>
           </View>
-        )}
-      </View>
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        {revealed ? (
-          <TouchableOpacity style={styles.nextBtn} activeOpacity={0.85}>
-            <Text style={styles.nextBtnText}>Weiter</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.skipBtn} activeOpacity={0.7}>
-            <Text style={styles.skipBtnText}>Überspringen</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+          <Text style={styles.questionText}>{question.text}</Text>
+
+          <View style={styles.options}>
+            {question.options.map((opt) => {
+              const isSelected = selected === opt.id;
+              const isRight = revealed && opt.id === question.correct;
+              const isWrong = revealed && isSelected && !isRight;
+              const isDimmed = revealed && !isSelected && !isRight;
+
+              return (
+                <Animated.View
+                  key={opt.id}
+                  style={isRight && revealed ? { transform: [{ scale: correctScale }] } : undefined}
+                >
+                  <TouchableOpacity
+                    style={[
+                      styles.option,
+                      isRight && styles.optionCorrect,
+                      isWrong && styles.optionWrong,
+                      isDimmed && styles.optionDimmed,
+                    ]}
+                    onPress={() => handleSelect(opt.id)}
+                    activeOpacity={0.7}
+                    disabled={revealed}
+                  >
+                    <View style={[
+                      styles.optionKey,
+                      isRight && styles.optionKeyCorrect,
+                      isWrong && styles.optionKeyWrong,
+                    ]}>
+                      <Text style={styles.optionKeyText}>{opt.id}</Text>
+                    </View>
+                    <Text style={[styles.optionText, isRight && styles.optionTextCorrect]}>
+                      {opt.text}
+                    </Text>
+                    {isRight && <Text style={styles.tick}>✓</Text>}
+                    {isWrong && <Text style={styles.cross}>✕</Text>}
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })}
+          </View>
+        </ScrollView>
+      </Animated.View>
+
+      {/* Feedback bottom sheet */}
+      {revealed && (
+        <>
+          <Animated.View
+            style={[styles.sheetOverlay, { opacity: overlayOpacity }]}
+            pointerEvents="none"
+          />
+          <Animated.View
+            style={[
+              styles.sheet,
+              isCorrect ? styles.sheetCorrect : styles.sheetWrong,
+              { transform: [{ translateY: sheetY }] },
+            ]}
+          >
+            <Text style={styles.sheetEmoji}>{isCorrect ? '🎯' : '💡'}</Text>
+            <Text style={[styles.sheetTitle, isCorrect ? styles.sheetTitleCorrect : styles.sheetTitleWrong]}>
+              {isCorrect ? 'Correct!' : 'Not quite'}
+            </Text>
+            <Text style={styles.sheetExplanation}>{question.explanation}</Text>
+            <TouchableOpacity
+              style={[styles.continueBtn, isCorrect ? styles.continueBtnCorrect : styles.continueBtnWrong]}
+              onPress={handleNext}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.continueBtnText}>
+                {index < questions.length - 1 ? 'Continue' : 'See Results'}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: BG,
-  },
+  container: { flex: 1, backgroundColor: BG },
 
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 20,
-    gap: 14,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 16,
+    gap: 12,
   },
+  exitBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: SURFACE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exitText: { color: MUTED, fontSize: 14, fontWeight: '700' },
   progressTrack: {
     flex: 1,
-    height: 6,
+    height: 10,
     backgroundColor: SURFACE,
     borderRadius: 99,
     overflow: 'hidden',
@@ -186,30 +244,24 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND,
     borderRadius: 99,
   },
-  streakPill: {
+  streakBadge: {
     backgroundColor: SURFACE,
     borderRadius: 99,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderWidth: 1,
     borderColor: BORDER,
   },
-  streakText: {
-    color: TEXT,
-    fontSize: 13,
-    fontWeight: '700',
-  },
+  streakText: { color: TEXT, fontSize: 13, fontWeight: '700' },
 
-  // Body
-  body: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
+  questionArea: { flex: 1 },
+  questionContent: { paddingHorizontal: 20, paddingBottom: 20 },
+
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 22,
+    marginBottom: 20,
   },
   categoryPill: {
     backgroundColor: `${BRAND}18`,
@@ -219,137 +271,91 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: `${BRAND}35`,
   },
-  categoryText: {
-    color: BRAND,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  questionCount: {
-    color: MUTED,
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  categoryText: { color: BRAND, fontSize: 11, fontWeight: '700', letterSpacing: 0.8 },
+  difficultyDots: { color: BRAND, fontSize: 12, letterSpacing: 2 },
+
   questionText: {
     color: TEXT,
-    fontSize: 23,
+    fontSize: 22,
     fontWeight: '700',
-    lineHeight: 32,
-    letterSpacing: -0.4,
-    marginBottom: 32,
+    lineHeight: 31,
+    letterSpacing: -0.3,
+    marginBottom: 28,
   },
 
-  // Options
-  options: {
-    gap: 11,
-  },
+  options: { gap: 12 },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: SURFACE,
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: BORDER,
     gap: 14,
   },
-  optionCorrect: {
-    borderColor: BRAND,
-    backgroundColor: `${BRAND}12`,
-  },
-  optionWrong: {
-    borderColor: '#FF453A',
-    backgroundColor: '#FF453A10',
-  },
-  optionDimmed: {
-    opacity: 0.35,
-  },
-  optionLabel: {
-    width: 34,
-    height: 34,
+  optionCorrect: { borderColor: BRAND, backgroundColor: `${BRAND}14` },
+  optionWrong: { borderColor: ERROR, backgroundColor: `${ERROR}10` },
+  optionDimmed: { opacity: 0.3 },
+
+  optionKey: {
+    width: 36,
+    height: 36,
     borderRadius: 10,
     backgroundColor: BORDER,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  labelCorrect: {
-    backgroundColor: BRAND,
+  optionKeyCorrect: { backgroundColor: BRAND },
+  optionKeyWrong: { backgroundColor: ERROR },
+  optionKeyText: { color: TEXT, fontSize: 14, fontWeight: '800' },
+  optionText: { flex: 1, color: TEXT, fontSize: 15, fontWeight: '500', lineHeight: 21 },
+  optionTextCorrect: { color: BRAND, fontWeight: '600' },
+  tick: { color: BRAND, fontSize: 18, fontWeight: '900' },
+  cross: { color: ERROR, fontSize: 16, fontWeight: '900' },
+
+  // Bottom sheet
+  sheetOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
-  labelWrong: {
-    backgroundColor: '#FF453A',
+  sheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 28,
+    gap: 10,
+    borderTopWidth: 1,
   },
-  labelChar: {
-    color: TEXT,
+  sheetCorrect: {
+    backgroundColor: '#0D1F17',
+    borderTopColor: `${BRAND}40`,
+  },
+  sheetWrong: {
+    backgroundColor: '#1F0D0D',
+    borderTopColor: `${ERROR}40`,
+  },
+  sheetEmoji: { fontSize: 28 },
+  sheetTitle: { fontSize: 20, fontWeight: '800', marginBottom: 2 },
+  sheetTitleCorrect: { color: BRAND },
+  sheetTitleWrong: { color: ERROR },
+  sheetExplanation: {
+    color: '#C7C7CC',
     fontSize: 14,
-    fontWeight: '800',
-  },
-  optionText: {
-    flex: 1,
-    color: TEXT,
-    fontSize: 15,
-    fontWeight: '500',
     lineHeight: 21,
+    marginBottom: 8,
   },
-  checkmark: {
-    color: BRAND,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  cross: {
-    color: '#FF453A',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-
-  // Feedback
-  feedbackBanner: {
-    marginTop: 20,
-    borderRadius: 14,
-    padding: 14,
-  },
-  feedbackCorrect: {
-    backgroundColor: `${BRAND}18`,
-    borderWidth: 1,
-    borderColor: `${BRAND}30`,
-  },
-  feedbackWrong: {
-    backgroundColor: '#FF453A12',
-    borderWidth: 1,
-    borderColor: '#FF453A30',
-  },
-  feedbackText: {
-    color: TEXT,
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
-  },
-
-  // Footer
-  footer: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    paddingTop: 12,
-  },
-  nextBtn: {
-    backgroundColor: BRAND,
+  continueBtn: {
     borderRadius: 16,
-    paddingVertical: 18,
+    paddingVertical: 17,
     alignItems: 'center',
+    marginTop: 4,
   },
-  nextBtnText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-  },
-  skipBtn: {
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  skipBtnText: {
-    color: MUTED,
-    fontSize: 15,
-    fontWeight: '500',
-  },
+  continueBtnCorrect: { backgroundColor: BRAND },
+  continueBtnWrong: { backgroundColor: ERROR },
+  continueBtnText: { color: '#000', fontSize: 16, fontWeight: '800' },
 });
