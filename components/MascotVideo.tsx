@@ -1,25 +1,26 @@
 import React from 'react';
-import { Image, StyleSheet, ViewStyle, ImageStyle } from 'react-native';
+import { View } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 
 interface Props {
-  video: any;       // require('../assets/videos/xxx.mp4')
-  fallback: any;    // require('../assets/mascots/xxx.png')
+  video: any;
+  fallback?: any;
   size?: number;
-  style?: ViewStyle | ImageStyle | any;
   loop?: boolean;
 }
 
-export default function MascotVideo({ video, fallback, size = 180, style, loop = true }: Props) {
+export default function MascotVideo({ video, size = 180, loop = true }: Props) {
   return (
-    <Video
-      source={video}
-      style={[{ width: size, height: size }, style]}
-      resizeMode={ResizeMode.CONTAIN}
-      shouldPlay
-      isLooping={loop}
-      isMuted
-      useNativeControls={false}
-    />
+    <View style={{ width: size, height: size, backgroundColor: '#0F0F0F' }}>
+      <Video
+        source={video}
+        style={{ width: size, height: size }}
+        resizeMode={ResizeMode.CONTAIN}
+        shouldPlay
+        isLooping={loop}
+        isMuted
+        useNativeControls={false}
+      />
+    </View>
   );
 }

@@ -79,6 +79,10 @@ export const ICONS = {
   min20:        require('../assets/icons/icon_20min.png'),
   bell:         require('../assets/icons/icon_bell.png'),
   flame:        require('../assets/icons/icon_flame.png'),
+  flagEn:       require('../assets/icons/flag_en.png'),
+  flagDe:       require('../assets/icons/flag_de.png'),
+  flagEs:       require('../assets/icons/flag_es.png'),
+  flagPt:       require('../assets/icons/flag_pt.png'),
 };
 
 // Legacy support
