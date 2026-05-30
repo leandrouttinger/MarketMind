@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { ICONS, BUCK } from '../utils/imageAssets';
+import { ICONS, BUCK, BUCK_VID, SHARED_VID } from '../utils/imageAssets';
+import MascotVideo from '../components/MascotVideo';
 
 const BRAND = '#10B981';
 const BG = '#0F0F0F';
@@ -167,7 +168,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
           {/* ── Transition ── */}
           {isTransition && (
             <View style={styles.transitionContent}>
-              <Image source={BUCK.default} style={styles.transitionMascot} resizeMode="contain" />
+              <MascotVideo video={BUCK_VID.idle} fallback={BUCK.default} size={200} />
               <Text style={styles.transitionName}>Ready, {userName}?</Text>
               <Text style={styles.transitionDesc}>5 questions. No pressure.</Text>
             </View>
@@ -217,8 +218,8 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
           {/* ── Notifications ── */}
           {isNotif && (
             <View style={styles.notifCard}>
-              <Image source={BUCK.default} style={styles.notifMascot} resizeMode="contain" />
-              <Image source={ICONS.bell} style={styles.notifBell} resizeMode="contain" />
+              <MascotVideo video={BUCK_VID.idle} fallback={BUCK.default} size={120} />
+              <MascotVideo video={SHARED_VID.bellRing} fallback={ICONS.bell} size={70} />
               <Text style={styles.notifStat}>
                 Users with reminders are{' '}
                 <Text style={styles.notifHighlight}>3x more consistent.</Text>

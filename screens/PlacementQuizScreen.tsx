@@ -78,7 +78,8 @@ const QUESTIONS = [
 ];
 
 // ── Mascot placeholder ────────────────────────────────────────────────────────
-import { BUCK as BUCK_IMGS } from '../utils/imageAssets';
+import { BUCK as BUCK_IMGS, BUCK_VID } from '../utils/imageAssets';
+import MascotVideo from '../components/MascotVideo';
 
 interface Props {
   userName: string;
@@ -139,7 +140,7 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
     return (
       <SafeAreaView style={styles.container}>
         <Animated.View style={[styles.introWrap, { opacity: fadeIn }]}>
-          <Image source={BUCK_IMGS.default} style={{ width: 200, height: 200 }} resizeMode="contain" />
+          <MascotVideo video={BUCK_VID.idle} fallback={BUCK_IMGS.default} size={200} />
 
           <View style={styles.introTextBlock}>
             <Text style={styles.introReady}>
@@ -176,7 +177,7 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.resultWrap}>
-          <Image source={BUCK_IMGS.levelUp} style={{ width: 160, height: 160 }} resizeMode="contain" />
+          <MascotVideo video={BUCK_VID.levelUp} fallback={BUCK_IMGS.levelUp} size={160} loop={false} />
           <Text style={styles.resultScore}>{score}/{QUESTIONS.length} correct</Text>
           <Text style={[styles.resultLevel, { color: level.color }]}>{level.label} Investor</Text>
           <Text style={styles.resultDesc}>{level.desc}</Text>

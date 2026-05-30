@@ -1,4 +1,4 @@
-// ─── Mascots ─────────────────────────────────────────────────────────────────
+// ─── Mascot Images (PNG, transparent background) ─────────────────────────────
 export const BUCK = {
   default:    require('../assets/mascots/buck_default.png'),
   correct:    require('../assets/mascots/buck_correct.png'),
@@ -25,7 +25,36 @@ export const BOTH = {
   onboarding: require('../assets/mascots/both_onboarding.png'),
 };
 
-// ─── Onboarding Icons ─────────────────────────────────────────────────────────
+// ─── Mascot Videos (MP4, animated, transparent-friendly) ─────────────────────
+export const BUCK_VID = {
+  idle:      require('../assets/videos/buck_idle.mp4'),
+  correct:   require('../assets/videos/buck_correct.mp4'),
+  streakLost:require('../assets/videos/buck_streak_lost.mp4'),
+  fire:      require('../assets/videos/buck_fire.mp4'),
+  wrong:     require('../assets/videos/buck_wrong.mp4'),
+  levelUp:   require('../assets/videos/buck_level_up.mp4'),
+  faction:   require('../assets/videos/buck_faction.mp4'),
+  weeklyWin: require('../assets/videos/buck_weekly_win.mp4'),
+};
+
+export const GRIZ_VID = {
+  idle:      require('../assets/videos/griz_idle.mp4'),
+  correct:   require('../assets/videos/griz_correct.mp4'),
+  streakLost:require('../assets/videos/griz_streak_lost.mp4'),
+  fire:      require('../assets/videos/griz_fire.mp4'),
+  wrong:     require('../assets/videos/griz_wrong.mp4'),
+  levelUp:   require('../assets/videos/griz_level_up.mp4'),
+  faction:   require('../assets/videos/griz_faction.mp4'),
+  weeklyWin: require('../assets/videos/griz_weekly_win.mp4'),
+};
+
+export const SHARED_VID = {
+  bothOnboarding: require('../assets/videos/both_onboarding.mp4'),
+  bellRing:       require('../assets/videos/bell_ring.mp4'),
+  flameIdle:      require('../assets/videos/flame_idle.mp4'),
+};
+
+// ─── Onboarding Icons (background removed) ───────────────────────────────────
 export const ICONS = {
   invest:       require('../assets/icons/icon_invest.png'),
   markets:      require('../assets/icons/icon_markets.png'),
@@ -52,7 +81,7 @@ export const ICONS = {
   flame:        require('../assets/icons/icon_flame.png'),
 };
 
-// Legacy support for existing screens
+// Legacy support
 export const IMAGES = {
   flame:     require('../assets/icons/icon_flame.png'),
   chartHero: require('../assets/icons/icon_markets.png'),
