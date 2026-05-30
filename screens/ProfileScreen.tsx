@@ -327,6 +327,22 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
           </View>
 
           <Text style={styles.versionText}>{t('versionText')}</Text>
+
+          {/* Dev reset — clears all data and restarts onboarding */}
+          <TouchableOpacity
+            style={styles.resetBtn}
+            onPress={async () => {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              await clearState();
+              // Reload the app
+              if (typeof window !== 'undefined') {
+                window.location.reload();
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.resetBtnText}>Reset App (Dev)</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -434,4 +450,6 @@ const styles = StyleSheet.create({
   pickerCheck: { color: BRAND, fontSize: 16, fontWeight: '800' },
 
   versionText: { color: '#3A3A3C', fontSize: 11, textAlign: 'center' },
+  resetBtn: { borderRadius: 12, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#FF453A30', backgroundColor: '#FF453A10' },
+  resetBtnText: { color: '#FF453A', fontSize: 12, fontWeight: '700' },
 });
