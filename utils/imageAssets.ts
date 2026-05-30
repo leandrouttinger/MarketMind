@@ -52,6 +52,7 @@ export const SHARED_VID = {
   bothOnboarding: require('../assets/videos/both_onboarding.mp4'),
   bellRing:       require('../assets/videos/bell_ring.mp4'),
   flameIdle:      require('../assets/videos/flame_idle.mp4'),
+  flameGreen:     require('../assets/videos/flame_green.mp4'),
 };
 
 // ─── Onboarding Icons (background removed) ───────────────────────────────────
@@ -83,6 +84,18 @@ export const ICONS = {
   flagDe:       require('../assets/icons/flag_de.png'),
   flagEs:       require('../assets/icons/flag_es.png'),
   flagPt:       require('../assets/icons/flag_pt.png'),
+  cloudSynced:      require('../assets/icons/icon_cloud_synced.png'),
+  cloudBackup:      require('../assets/icons/icon_cloud_backup.png'),
+  diffBeginner:     require('../assets/icons/icon_diff_beginner.png'),
+  diffIntermediate: require('../assets/icons/icon_diff_intermediate.png'),
+  diffAdvanced:     require('../assets/icons/icon_diff_advanced.png'),
+};
+
+// ─── Backgrounds ─────────────────────────────────────────────────────────────
+export const BACKGROUNDS = {
+  tradingRoom: require('../assets/backgrounds/bg_trading_room.png'),
+  bullMarket:  require('../assets/backgrounds/bg_bull_market.png'),
+  bearMarket:  require('../assets/backgrounds/bg_bear_market.png'),
 };
 
 // Legacy support

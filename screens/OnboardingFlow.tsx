@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { ICONS, BUCK, BUCK_VID, SHARED_VID } from '../utils/imageAssets';
 import MascotVideo from '../components/MascotVideo';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BRAND = '#10B981';
 const BG = '#0F0F0F';
@@ -31,77 +32,69 @@ interface Step {
   options?: Option[];
 }
 
-const STEPS: Step[] = [
-  {
-    type: 'single',
-    title: 'Why MarketMind?',
-    options: [
-      { id: 'a', icon: ICONS.invest,   label: 'Learn how to invest' },
-      { id: 'b', icon: ICONS.markets,  label: 'Understand the markets' },
-      { id: 'c', icon: ICONS.school,   label: 'School or work' },
-      { id: 'd', icon: ICONS.curious,  label: 'Just curious' },
-    ],
-  },
-  {
-    type: 'single',
-    title: 'How did you\nfind us?',
-    options: [
-      { id: 'a', icon: ICONS.social,   label: 'Instagram / Social Media' },
-      { id: 'b', icon: ICONS.friends,  label: 'Friend or family' },
-      { id: 'c', icon: ICONS.ai,       label: 'ChatGPT / AI' },
-      { id: 'd', icon: ICONS.other,    label: 'Other...' },
-    ],
-  },
-  {
-    type: 'single',
-    title: 'Your finance\nlevel right now?',
-    options: [
-      { id: 'a', icon: ICONS.beginner,     label: 'Beginner',     sub: 'Just getting started' },
-      { id: 'b', icon: ICONS.basic,        label: 'Basic',        sub: 'Know the basics' },
-      { id: 'c', icon: ICONS.intermediate, label: 'Intermediate', sub: 'Stocks and markets' },
-      { id: 'd', icon: ICONS.advanced,     label: 'Advanced',     sub: 'I actively trade' },
-    ],
-  },
-  {
-    type: 'transition',
-    title: 'Good instincts.\nNow prove it.',
-    subtitle: '5 questions. 2 minutes. Your level, locked in.',
-  },
-  {
-    type: 'multi',
-    title: 'What is your\nmain goal?',
-    subtitle: 'Pick all that fit',
-    options: [
-      { id: 'a', icon: ICONS.wealth,    label: 'Build long-term wealth' },
-      { id: 'b', icon: ICONS.investing, label: 'Start investing smart' },
-      { id: 'c', icon: ICONS.decisions, label: 'Make better money decisions' },
-      { id: 'd', icon: ICONS.career,    label: 'Career or education' },
-      { id: 'e', icon: ICONS.love,      label: 'I just love finance' },
-    ],
-  },
-  {
-    type: 'single',
-    title: 'Daily time\ncommitment?',
-    options: [
-      { id: 'a', icon: ICONS.min5,  label: '5 minutes',   sub: 'Quick wins every day' },
-      { id: 'b', icon: ICONS.min10, label: '10 minutes',  sub: 'Steady and consistent' },
-      { id: 'c', icon: ICONS.min15, label: '15 minutes',  sub: 'Serious progress' },
-      { id: 'd', icon: ICONS.min20, label: '20+ minutes', sub: 'All in' },
-    ],
-  },
-  {
-    type: 'notifications',
-    title: "Streaks die\nin silence.",
-    subtitle: 'One reminder. That is all it takes.',
-  },
-];
+// Steps are built dynamically using t() — see buildSteps() below
 
 interface Props {
   userName: string;
   onComplete: (goals: string[]) => void;
 }
 
+function buildSteps(t: (k: string) => string): Step[] {
+  return [
+    {
+      type: 'single', title: t('ob1Title'),
+      options: [
+        { id: 'a', icon: ICONS.invest,   label: t('ob1a') },
+        { id: 'b', icon: ICONS.markets,  label: t('ob1b') },
+        { id: 'c', icon: ICONS.school,   label: t('ob1c') },
+        { id: 'd', icon: ICONS.curious,  label: t('ob1d') },
+      ],
+    },
+    {
+      type: 'single', title: t('ob2Title'),
+      options: [
+        { id: 'a', icon: ICONS.social,   label: t('ob2a') },
+        { id: 'b', icon: ICONS.friends,  label: t('ob2b') },
+        { id: 'c', icon: ICONS.ai,       label: t('ob2c') },
+        { id: 'd', icon: ICONS.other,    label: t('ob2d') },
+      ],
+    },
+    {
+      type: 'single', title: t('ob3Title'),
+      options: [
+        { id: 'a', icon: ICONS.beginner,     label: t('ob3a'), sub: t('ob3aSub') },
+        { id: 'b', icon: ICONS.basic,        label: t('ob3b'), sub: t('ob3bSub') },
+        { id: 'c', icon: ICONS.intermediate, label: t('ob3c'), sub: t('ob3cSub') },
+        { id: 'd', icon: ICONS.advanced,     label: t('ob3d'), sub: t('ob3dSub') },
+      ],
+    },
+    { type: 'transition', title: t('ob4Title'), subtitle: t('ob4Sub') },
+    {
+      type: 'multi', title: t('ob5Title'), subtitle: t('ob5Sub'),
+      options: [
+        { id: 'a', icon: ICONS.wealth,    label: t('ob4a') },
+        { id: 'b', icon: ICONS.investing, label: t('ob4b') },
+        { id: 'c', icon: ICONS.decisions, label: t('ob4c') },
+        { id: 'd', icon: ICONS.career,    label: t('ob4d') },
+        { id: 'e', icon: ICONS.love,      label: t('ob4e') },
+      ],
+    },
+    {
+      type: 'single', title: t('ob6Title'),
+      options: [
+        { id: 'a', icon: ICONS.min5,  label: t('ob5a'), sub: t('ob5aSub') },
+        { id: 'b', icon: ICONS.min10, label: t('ob5b'), sub: t('ob5bSub') },
+        { id: 'c', icon: ICONS.min15, label: t('ob5c'), sub: t('ob5cSub') },
+        { id: 'd', icon: ICONS.min20, label: t('ob5d'), sub: t('ob5dSub') },
+      ],
+    },
+    { type: 'notifications', title: t('ob7Title'), subtitle: t('ob7Sub') },
+  ];
+}
+
 export default function OnboardingFlow({ userName, onComplete }: Props) {
+  const { t } = useLanguage();
+  const STEPS = buildSteps(t);
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [notifEnabled, setNotifEnabled] = useState(false);
@@ -169,8 +162,8 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
           {isTransition && (
             <View style={styles.transitionContent}>
               <MascotVideo video={BUCK_VID.idle} fallback={BUCK.default} size={200} />
-              <Text style={styles.transitionName}>Ready, {userName}?</Text>
-              <Text style={styles.transitionDesc}>5 questions. No pressure.</Text>
+              <Text style={styles.transitionName}>{t('readyName').replace('{name}', userName)}</Text>
+              <Text style={styles.transitionDesc}>{t('fiveQuestionsNoPressure')}</Text>
             </View>
           )}
 
@@ -221,8 +214,8 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
               <MascotVideo video={BUCK_VID.idle} fallback={BUCK.default} size={120} />
               <MascotVideo video={SHARED_VID.bellRing} fallback={ICONS.bell} size={70} />
               <Text style={styles.notifStat}>
-                Users with reminders are{' '}
-                <Text style={styles.notifHighlight}>3x more consistent.</Text>
+                {t('notifStat')}{' '}
+                <Text style={styles.notifHighlight}>{t('notifHighlight')}</Text>
               </Text>
               <View style={styles.notifFactRow}>
                 <View style={styles.notifFact}>
@@ -244,7 +237,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
                 activeOpacity={0.8}
               >
                 <Text style={[styles.notifBtnText, notifEnabled && styles.notifBtnTextActive]}>
-                  {notifEnabled ? '✓  Reminders enabled' : 'Enable daily reminders'}
+                  {notifEnabled ? t('remindersEnabled') : t('enableReminders')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -262,7 +255,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
             activeOpacity={0.85}
           >
             <Text style={[styles.continueBtnText, !canContinue && styles.continueBtnTextOff]}>
-              {step === STEPS.length - 1 ? "Let's go!" : 'Continue →'}
+              {step === STEPS.length - 1 ? t('letsGo') : t('continueBtn')}
             </Text>
           </TouchableOpacity>
           {isNotif && !notifEnabled && (

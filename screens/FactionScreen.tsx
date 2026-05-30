@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import MascotVideo from '../components/MascotVideo';
 import { BUCK_VID, GRIZ_VID, BUCK, GRIZ } from '../utils/imageAssets';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BG         = '#0F0F0F';
 const BORDER     = '#2C2C2E';
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export default function FactionScreen({ userName, onComplete }: Props) {
+  const { t } = useLanguage();
   const [selected, setSelected] = useState<Faction | null>(null);
   const fadeIn    = useRef(new Animated.Value(0)).current;
   const bullScale = useRef(new Animated.Value(1)).current;
@@ -58,10 +60,8 @@ export default function FactionScreen({ userName, onComplete }: Props) {
       <Animated.View style={[styles.inner, { opacity: fadeIn }]}>
 
         <View style={styles.header}>
-          <Text style={styles.title}>Choose your side.</Text>
-          <Text style={styles.subtitle}>
-            Every quiz earns XP for your faction.{'\n'}Switch once per month.
-          </Text>
+          <Text style={styles.title}>{t('factionTitle')}</Text>
+          <Text style={styles.subtitle}>{t('factionSubtitle')}</Text>
         </View>
 
         {/* Ratio bar */}
@@ -90,7 +90,7 @@ export default function FactionScreen({ userName, onComplete }: Props) {
               />
             </Animated.View>
             <Text style={[styles.factionName, selected === 'bull' && { color: BULL_COLOR }]}>
-              The Bulls
+              {t('factionBullsName')}
             </Text>
             <Text style={styles.factionXP}>{BULL_XP.toLocaleString()} XP</Text>
             {selected === 'bull' && (
@@ -114,7 +114,7 @@ export default function FactionScreen({ userName, onComplete }: Props) {
               />
             </Animated.View>
             <Text style={[styles.factionName, selected === 'bear' && { color: BEAR_COLOR }]}>
-              The Bears
+              {t('factionBearsName')}
             </Text>
             <Text style={styles.factionXP}>{BEAR_XP.toLocaleString()} XP</Text>
             {selected === 'bear' && (
@@ -129,10 +129,10 @@ export default function FactionScreen({ userName, onComplete }: Props) {
         {/* Descriptions */}
         <View style={styles.descs}>
           <View style={[styles.descCard, selected === 'bull' && { borderColor: `${BULL_COLOR}60` }]}>
-            <Text style={[styles.descText, selected === 'bull' && { color: BULL_COLOR }]}>Optimists. Growth mindset.</Text>
+            <Text style={[styles.descText, selected === 'bull' && { color: BULL_COLOR }]}>{t('factionBullsDesc')}</Text>
           </View>
           <View style={[styles.descCard, selected === 'bear' && { borderColor: `${BEAR_COLOR}60` }]}>
-            <Text style={[styles.descText, selected === 'bear' && { color: BEAR_COLOR }]}>Realists. Risk-aware.</Text>
+            <Text style={[styles.descText, selected === 'bear' && { color: BEAR_COLOR }]}>{t('factionBearsDesc')}</Text>
           </View>
         </View>
 
@@ -143,11 +143,11 @@ export default function FactionScreen({ userName, onComplete }: Props) {
           disabled={!selected}
         >
           <Text style={[styles.joinBtnText, !selected && { color: MUTED }]}>
-            {selected ? `Join the ${selected === 'bull' ? 'Bulls' : 'Bears'} →` : 'Pick a side first'}
+            {selected ? (selected === 'bull' ? t('joinBulls') : t('joinBears')) : t('pickSide')}
           </Text>
         </TouchableOpacity>
 
-        <Text style={styles.switchNote}>You can switch factions once per month.</Text>
+        <Text style={styles.switchNote}>{t('switchNote')}</Text>
 
       </Animated.View>
     </SafeAreaView>
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   checkText: { color: '#000', fontSize: 12, fontWeight: '900' },
 
   vsDivider: { paddingHorizontal: 10 },
-  vs: { color: '#333', fontSize: 22, fontWeight: '900' },
+  vs: { color: '#FFFFFF', fontSize: 22, fontWeight: '900' },
 
   descs: { flexDirection: 'row', gap: 8 },
   descCard: {

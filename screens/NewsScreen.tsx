@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   ScrollView, ActivityIndicator, Linking, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../contexts/LanguageContext';
-import { IMAGES } from '../utils/imageAssets';
+import { BACKGROUNDS } from '../utils/imageAssets';
+
+const NEWS_CACHE_KEY = 'news_cache';
+const NEWS_DATE_KEY = 'news_cache_date';
 
 const BG = '#0A0A0A';
 const SURFACE = '#141414';
@@ -26,6 +30,7 @@ interface NewsItem {
   pubDate: string;
   link: string;
   category?: string;
+  imageUrl?: string;
 }
 
 interface MarketPrice {
@@ -46,16 +51,16 @@ const MOCK_MARKETS: MarketPrice[] = [
 ];
 
 const FALLBACK: NewsItem[] = [
-  { title: 'Federal Reserve Signals Patience on Rate Cuts Amid Strong Jobs Data', description: 'Fed officials indicate they need more evidence of cooling inflation before reducing the federal funds rate, citing strong employment numbers.', pubDate: new Date().toISOString(), link: '', category: 'Macro' },
-  { title: 'S&P 500 Hits New Record High on Strong Tech Earnings', description: 'The benchmark index reaches new all-time highs as mega-cap technology companies beat quarterly earnings estimates.', pubDate: new Date().toISOString(), link: '', category: 'Markets' },
-  { title: 'Bitcoin ETF Inflows Top $10B — Institutional Adoption Accelerates', description: 'Spot Bitcoin ETFs continue attracting record institutional capital, with BlackRock and Fidelity leading inflows this week.', pubDate: new Date().toISOString(), link: '', category: 'Crypto' },
-  { title: 'Buffett\'s Berkshire Hathaway Holds Record $327B Cash Pile', description: 'Warren Buffett increases cash position to historic levels, signaling caution about current valuations across most asset classes.', pubDate: new Date().toISOString(), link: '', category: 'Stocks' },
-  { title: 'ECB Cuts Rates Third Time This Year as Euro Zone Growth Slows', description: 'The European Central Bank reduces deposit rate again, with policymakers citing slowing inflation and weakening economic momentum.', pubDate: new Date().toISOString(), link: '', category: 'Macro' },
-  { title: 'Nvidia Reports 200% YoY Revenue Growth Driven by AI Demand', description: 'The AI chipmaker continues to dominate the data center market, with Q3 results far exceeding analyst forecasts once again.', pubDate: new Date().toISOString(), link: '', category: 'Tech' },
-  { title: 'Gold Breaks $2,400 as Dollar Weakens on Rate Cut Expectations', description: 'Precious metals rally as traders price in a more dovish Federal Reserve path for the remainder of the year.', pubDate: new Date().toISOString(), link: '', category: 'Commodities' },
-  { title: 'China\'s Property Sector Stabilizes After Government Stimulus Package', description: 'Beijing\'s latest intervention measures show early signs of stabilizing the distressed real estate market and restoring buyer confidence.', pubDate: new Date().toISOString(), link: '', category: 'Global' },
-  { title: 'Apple Announces $110B Share Buyback — Largest in Company History', description: 'The tech giant returns record capital to shareholders as services revenue continues to grow at double-digit rates.', pubDate: new Date().toISOString(), link: '', category: 'Stocks' },
-  { title: 'Oil Slides Below $75 as OPEC+ Considers Production Increase', description: 'Crude oil prices fall on reports that OPEC+ members are discussing a gradual easing of production cuts in Q4.', pubDate: new Date().toISOString(), link: '', category: 'Commodities' },
+  { title: 'Federal Reserve Signals Patience on Rate Cuts Amid Strong Jobs Data', description: 'Fed officials indicate they need more evidence of cooling inflation before reducing the federal funds rate, citing strong employment numbers.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/federal-reserve', category: 'Macro' },
+  { title: 'S&P 500 Hits New Record High on Strong Tech Earnings', description: 'The benchmark index reaches new all-time highs as mega-cap technology companies beat quarterly earnings estimates.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/sp500-record', category: 'Markets' },
+  { title: 'Bitcoin ETF Inflows Top $10B — Institutional Adoption Accelerates', description: 'Spot Bitcoin ETFs continue attracting record institutional capital, with BlackRock and Fidelity leading inflows this week.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/bitcoin-etf', category: 'Crypto' },
+  { title: "Buffett's Berkshire Hathaway Holds Record $327B Cash Pile", description: 'Warren Buffett increases cash position to historic levels, signaling caution about current valuations across most asset classes.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/berkshire', category: 'Stocks' },
+  { title: 'ECB Cuts Rates Third Time This Year as Euro Zone Growth Slows', description: 'The European Central Bank reduces deposit rate again, with policymakers citing slowing inflation and weakening economic momentum.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/ecb-rates', category: 'Macro' },
+  { title: 'Nvidia Reports 200% YoY Revenue Growth Driven by AI Demand', description: 'The AI chipmaker continues to dominate the data center market, with Q3 results far exceeding analyst forecasts once again.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/nvidia', category: 'Tech' },
+  { title: 'Gold Breaks $2,400 as Dollar Weakens on Rate Cut Expectations', description: 'Precious metals rally as traders price in a more dovish Federal Reserve path for the remainder of the year.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/gold', category: 'Commodities' },
+  { title: "China's Property Sector Stabilizes After Government Stimulus Package", description: "Beijing's latest intervention measures show early signs of stabilizing the distressed real estate market.", pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/china-property', category: 'Global' },
+  { title: 'Apple Announces $110B Share Buyback — Largest in Company History', description: 'The tech giant returns record capital to shareholders as services revenue continues to grow at double-digit rates.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/apple-buyback', category: 'Stocks' },
+  { title: 'Oil Slides Below $75 as OPEC+ Considers Production Increase', description: 'Crude oil prices fall on reports that OPEC+ members are discussing a gradual easing of production cuts in Q4.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/oil-opec', category: 'Commodities' },
 ];
 
 const CATEGORIES = ['All', 'Markets', 'Crypto', 'Macro', 'Stocks', 'Tech', 'Global', 'Commodities'];
@@ -64,6 +69,15 @@ const CAT_COLORS: Record<string, string> = {
   Stocks: '#EC4899', Tech: '#8B5CF6', Global: '#06B6D4',
   Commodities: '#F59E0B', All: '#10B981',
 };
+
+function openArticle(url: string) {
+  const clean = url?.trim();
+  if (clean && clean.startsWith('http')) {
+    Linking.openURL(clean);
+  } else {
+    Linking.openURL('https://finance.yahoo.com');
+  }
+}
 
 function timeAgo(str: string) {
   const diff = Date.now() - new Date(str).getTime();
@@ -80,21 +94,40 @@ export default function NewsScreen() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
 
-  useEffect(() => { fetchNews(); }, []);
+  useEffect(() => { loadNews(); }, []);
+
+  const todayStr = () => new Date().toISOString().slice(0, 10);
+
+  const loadNews = async () => {
+    setLoading(true);
+    try {
+      const cachedDate = await AsyncStorage.getItem(NEWS_DATE_KEY);
+      if (cachedDate === todayStr()) {
+        const cached = await AsyncStorage.getItem(NEWS_CACHE_KEY);
+        if (cached) { setNews(JSON.parse(cached)); setLoading(false); return; }
+      }
+      await fetchNews();
+    } catch {
+      await fetchNews();
+    }
+  };
 
   const fetchNews = async () => {
-    setLoading(true);
     try {
       const res = await fetch(NEWS_API);
       const data = await res.json();
       if (data.status === 'ok' && data.items?.length > 0) {
-        setNews(data.items.slice(0, 15).map((item: any) => ({
+        const items: NewsItem[] = data.items.slice(0, 15).map((item: any) => ({
           title: item.title,
           description: (item.description ?? '').replace(/<[^>]*>/g, '').slice(0, 160),
           pubDate: item.pubDate,
           link: item.link,
-          category: 'Markets',
-        })));
+          category: item.categories?.[0] ?? 'Markets',
+          imageUrl: item.thumbnail || item.enclosure?.link || null,
+        }));
+        setNews(items);
+        await AsyncStorage.setItem(NEWS_CACHE_KEY, JSON.stringify(items));
+        await AsyncStorage.setItem(NEWS_DATE_KEY, todayStr());
       } else {
         setNews(FALLBACK);
       }
@@ -115,7 +148,7 @@ export default function NewsScreen() {
           <Text style={styles.headerTitle}>MarketMind</Text>
           <Text style={styles.headerSub}>Markets & Finance</Text>
         </View>
-        <TouchableOpacity style={styles.liveTag} onPress={fetchNews}>
+        <TouchableOpacity style={styles.liveTag} onPress={async () => { await AsyncStorage.removeItem(NEWS_DATE_KEY); await fetchNews(); }}>
           <View style={styles.liveDot} />
           <Text style={styles.liveText}>LIVE</Text>
         </TouchableOpacity>
@@ -162,8 +195,11 @@ export default function NewsScreen() {
           <View style={styles.newsBody}>
             {/* Hero story */}
             {filtered[0] && (
-              <TouchableOpacity style={styles.heroCard} onPress={() => filtered[0].link && Linking.openURL(filtered[0].link)} activeOpacity={0.85}>
-                <Image source={{ uri: IMAGES.newsHero }} style={styles.heroImage} />
+              <TouchableOpacity style={styles.heroCard} onPress={() => openArticle(filtered[0].link)} activeOpacity={0.85}>
+                {filtered[0].imageUrl
+                  ? <Image source={{ uri: filtered[0].imageUrl }} style={styles.heroImage} />
+                  : <Image source={BACKGROUNDS.bullMarket} style={styles.heroImage} />
+                }
                 <View style={styles.heroContent}>
                   <View style={styles.heroCatRow}>
                     <View style={[styles.catTag, { backgroundColor: CAT_COLORS[filtered[0].category ?? 'Markets'] ?? BRAND }]}>
@@ -190,7 +226,7 @@ export default function NewsScreen() {
                   <TouchableOpacity
                     key={i}
                     style={styles.gridCard}
-                    onPress={() => item.link && Linking.openURL(item.link)}
+                    onPress={() => openArticle(item.link)}
                     activeOpacity={0.8}
                   >
                     <View style={[styles.gridCatBar, { backgroundColor: CAT_COLORS[item.category ?? 'Markets'] ?? BRAND }]} />
@@ -212,7 +248,7 @@ export default function NewsScreen() {
               <TouchableOpacity
                 key={i}
                 style={[styles.listItem, i < filtered.length - 6 && styles.listItemBorder]}
-                onPress={() => item.link && Linking.openURL(item.link)}
+                onPress={() => openArticle(item.link)}
                 activeOpacity={0.75}
               >
                 <View style={[styles.listCatDot, { backgroundColor: CAT_COLORS[item.category ?? 'Markets'] ?? BRAND }]} />

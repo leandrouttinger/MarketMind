@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator,
+  TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -11,6 +11,7 @@ import { getLevelInfo, getNextLevel, getProgressToNext, XP_LEVELS } from '../uti
 import { UserLevel } from '../utils/questionPicker';
 import { signUp, signIn, signOut, getCurrentUser, fetchProfile, upsertProfile } from '../utils/supabase';
 import { clearState } from '../utils/storage';
+import { ICONS } from '../utils/imageAssets';
 
 const BRAND = '#10B981';
 const BG = '#0F0F0F';
@@ -20,16 +21,17 @@ const TEXT = '#FFFFFF';
 const MUTED = '#8E8E93';
 const ERROR = '#FF453A';
 
-const LANGUAGES: { code: Language; label: string; flag: string }[] = [
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
+const LANGUAGES: { code: Language; label: string; flagImg: any }[] = [
+  { code: 'en', label: 'English', flagImg: ICONS.flagEn },
+  { code: 'de', label: 'Deutsch', flagImg: ICONS.flagDe },
+  { code: 'es', label: 'Español', flagImg: ICONS.flagEs },
+  { code: 'pt', label: 'Português', flagImg: ICONS.flagPt },
 ];
 
-const DIFFICULTIES: { key: UserLevel; label: string; desc: string; emoji: string }[] = [
-  { key: 'beginner',     label: 'Beginner',     desc: 'Easy & medium questions', emoji: '🌱' },
-  { key: 'intermediate', label: 'Intermediate', desc: 'Mix of all levels',        emoji: '📊' },
-  { key: 'advanced',     label: 'Advanced',     desc: 'Mostly hard questions',    emoji: '🏆' },
+const DIFFICULTIES: { key: UserLevel; label: string; desc: string; icon: any }[] = [
+  { key: 'beginner',     label: 'Beginner',     desc: 'Easy & medium questions', icon: ICONS.diffBeginner },
+  { key: 'intermediate', label: 'Intermediate', desc: 'Mix of all levels',        icon: ICONS.diffIntermediate },
+  { key: 'advanced',     label: 'Advanced',     desc: 'Mostly hard questions',    icon: ICONS.diffAdvanced },
 ];
 
 interface Props {
@@ -109,6 +111,7 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
 
   const currentLang = LANGUAGES.find(l => l.code === language) ?? LANGUAGES[0];
   const currentDiff = DIFFICULTIES.find(d => d.key === level) ?? DIFFICULTIES[0];
+  const currentDiffIcon = currentDiff.icon;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -125,7 +128,7 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
             <View style={styles.profileRight}>
               <Text style={styles.profileName}>{userName}</Text>
               <View style={styles.levelRow}>
-                <Text style={styles.levelEmoji}>{levelInfo.emoji}</Text>
+                <View style={[styles.levelDot, { backgroundColor: levelInfo.color }]} />
                 <Text style={[styles.levelTitle, { color: levelInfo.color }]}>{levelInfo.title}</Text>
                 <Text style={styles.levelNum}>Lv. {levelInfo.level}</Text>
               </View>
@@ -142,7 +145,7 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{streak}</Text>
-              <Text style={styles.statLabel}>Day Streak 🔥</Text>
+              <Text style={styles.statLabel}>Day Streak</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{totalQuestions}</Text>
@@ -161,7 +164,7 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
             {loggedInEmail ? (
               /* Logged in state */
               <View style={[styles.accountCard, { borderColor: `${BRAND}40` }]}>
-                <Text style={{ fontSize: 26 }}>✅</Text>
+                <Image source={ICONS.cloudSynced} style={styles.accountIcon} resizeMode="contain" />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cardTitle}>Synced to Cloud</Text>
                   <Text style={styles.cardSub}>{loggedInEmail}</Text>
@@ -177,7 +180,7 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
               /* Logged out state */
               <>
                 <View style={styles.accountCard}>
-                  <Text style={{ fontSize: 26 }}>☁️</Text>
+                  <Image source={ICONS.cloudBackup} style={styles.accountIcon} resizeMode="contain" />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.cardTitle}>Backup your streak</Text>
                     <Text style={styles.cardSub}>Free account — never lose your progress</Text>
@@ -258,7 +261,7 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
                 onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setNotifOn(v => !v); }}
                 activeOpacity={0.7}
               >
-                <Text style={styles.settingIcon}>🔔</Text>
+                <Image source={ICONS.bell} style={styles.settingIconImg} resizeMode="contain" />
                 <Text style={styles.settingLabel}>{t('dailyReminders')}</Text>
                 <View style={[styles.toggle, notifOn && styles.toggleOn]}>
                   <View style={[styles.toggleThumb, notifOn && styles.toggleThumbOn]} />
@@ -271,7 +274,7 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
                 onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowLangPicker(v => !v); }}
                 activeOpacity={0.7}
               >
-                <Text style={styles.settingIcon}>{currentLang.flag}</Text>
+                <Image source={currentLang.flagImg} style={styles.settingIconImg} resizeMode="contain" />
                 <Text style={styles.settingLabel}>{t('language')}</Text>
                 <Text style={styles.settingValue}>{currentLang.label} {showLangPicker ? '▲' : '▼'}</Text>
               </TouchableOpacity>
@@ -284,7 +287,7 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
                       onPress={() => handleLangSelect(lang.code)}
                       activeOpacity={0.75}
                     >
-                      <Text style={styles.pickerFlag}>{lang.flag}</Text>
+                      <Image source={lang.flagImg} style={styles.pickerFlagImg} resizeMode="contain" />
                       <Text style={[styles.pickerLabel, language === lang.code && { color: BRAND }]}>
                         {lang.label}
                       </Text>
@@ -300,7 +303,7 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
                 onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowDiffPicker(v => !v); }}
                 activeOpacity={0.7}
               >
-                <Text style={styles.settingIcon}>{currentDiff.emoji}</Text>
+                <Image source={currentDiffIcon} style={styles.settingIconImg} resizeMode="contain" />
                 <Text style={styles.settingLabel}>{t('difficulty')}</Text>
                 <Text style={styles.settingValue}>{currentDiff.label} {showDiffPicker ? '▲' : '▼'}</Text>
               </TouchableOpacity>
@@ -313,7 +316,7 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
                       onPress={() => handleDiffSelect(d.key)}
                       activeOpacity={0.75}
                     >
-                      <Text style={styles.pickerFlag}>{d.emoji}</Text>
+                      <Image source={d.icon} style={styles.pickerDiffImg} resizeMode="contain" />
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.pickerLabel, level === d.key && { color: BRAND }]}>{d.label}</Text>
                         <Text style={styles.pickerDesc}>{d.desc}</Text>
@@ -366,6 +369,7 @@ const styles = StyleSheet.create({
   profileName: { color: '#FFF', fontSize: 18, fontWeight: '700' },
   levelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   levelEmoji: { fontSize: 16 },
+  levelDot: { width: 10, height: 10, borderRadius: 5 },
   levelTitle: { fontSize: 13, fontWeight: '700' },
   levelNum: { color: MUTED, fontSize: 11 },
   xpBarTrack: { height: 6, backgroundColor: BORDER, borderRadius: 99, overflow: 'hidden' },
@@ -426,6 +430,9 @@ const styles = StyleSheet.create({
   },
   settingRowBorder: { borderBottomWidth: 1, borderBottomColor: BORDER },
   settingIcon: { fontSize: 18, width: 26 },
+  settingIconImg: { width: 28, height: 28 },
+  accountIcon: { width: 40, height: 40 },
+  pickerDiffImg: { width: 36, height: 36 },
   settingLabel: { flex: 1, color: '#FFF', fontSize: 14 },
   settingValue: { color: MUTED, fontSize: 13 },
 
@@ -445,6 +452,7 @@ const styles = StyleSheet.create({
   },
   pickerOptionActive: { backgroundColor: `${BRAND}10` },
   pickerFlag: { fontSize: 20 },
+  pickerFlagImg: { width: 28, height: 28 },
   pickerLabel: { flex: 1, color: '#FFF', fontSize: 14, fontWeight: '500' },
   pickerDesc: { color: MUTED, fontSize: 11, marginTop: 1 },
   pickerCheck: { color: BRAND, fontSize: 16, fontWeight: '800' },

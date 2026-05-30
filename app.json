@@ -7,7 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.leandro.marketmind",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,6 +27,12 @@
     },
     "experiments": {
       "baseUrl": "/MarketMind"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e9eff867-9de1-4c2f-8ac3-9a33fb646d64"
+      }
+    },
+    "owner": "lele1973"
   }
 }

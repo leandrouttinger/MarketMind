@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Language } from '../i18n/translations';
-import { BUCK, ICONS } from '../utils/imageAssets';
+import { BUCK, BUCK_VID, ICONS } from '../utils/imageAssets';
+import MascotVideo from '../components/MascotVideo';
 
 const BRAND  = '#10B981';
 const BG     = '#0F0F0F';
@@ -13,11 +14,11 @@ const BORDER  = '#2C2C2E';
 const TEXT    = '#FFFFFF';
 const MUTED   = '#6B7280';
 
-const LANGS: { code: Language; flag: any; name: string; color: string }[] = [
-  { code: 'en', flag: ICONS.flagEn, name: 'English',   color: '#3B82F6' },
-  { code: 'de', flag: ICONS.flagDe, name: 'Deutsch',   color: '#F59E0B' },
-  { code: 'es', flag: ICONS.flagEs, name: 'Español',   color: '#EF4444' },
-  { code: 'pt', flag: ICONS.flagPt, name: 'Português', color: BRAND     },
+const LANGS: { code: Language; flag: any; name: string }[] = [
+  { code: 'en', flag: ICONS.flagEn, name: 'English'   },
+  { code: 'de', flag: ICONS.flagDe, name: 'Deutsch'   },
+  { code: 'es', flag: ICONS.flagEs, name: 'Español'   },
+  { code: 'pt', flag: ICONS.flagPt, name: 'Português' },
 ];
 
 interface Props { onContinue: () => void }
@@ -46,50 +47,43 @@ export default function LanguageScreen({ onContinue }: Props) {
     onContinue();
   };
 
-  const selectedLang = LANGS.find(l => l.code === selected)!;
-
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Animated.View style={[styles.inner, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
 
-        {/* Buck mascot — transparent, no background */}
+        {/* Buck mascot — transparent */}
         <View style={styles.mascotWrap}>
-          <Image source={BUCK.default} style={styles.mascot} resizeMode="contain" />
+          <MascotVideo video={BUCK_VID.idle} fallback={BUCK.default} size={150} />
           <Text style={styles.title}>Pick your language.</Text>
           <Text style={styles.subtitle}>Switch anytime in settings.</Text>
         </View>
 
-        {/* Language cards with real flag images */}
+        {/* Language cards */}
         <View style={styles.cards}>
           {LANGS.map((lang) => {
             const isActive = selected === lang.code;
             return (
               <TouchableOpacity
                 key={lang.code}
-                style={[
-                  styles.card,
-                  isActive && { borderColor: lang.color, backgroundColor: `${lang.color}0D` },
-                ]}
+                style={[styles.card, isActive && styles.cardActive]}
                 onPress={() => handleSelect(lang.code)}
                 activeOpacity={0.75}
               >
-                <Image source={lang.flag} style={styles.flagImg} resizeMode="contain" />
-                <Text style={[styles.langName, isActive && { color: lang.color }]}>
+                <View style={styles.flagWrap}>
+                  <Image source={lang.flag} style={styles.flagImg} resizeMode="cover" />
+                </View>
+                <Text style={[styles.langName, isActive && styles.langNameActive]}>
                   {lang.name}
                 </Text>
-                <View style={[styles.radio, isActive && { borderColor: lang.color }]}>
-                  {isActive && <View style={[styles.radioDot, { backgroundColor: lang.color }]} />}
+                <View style={[styles.radio, isActive && styles.radioActive]}>
+                  {isActive && <View style={styles.radioDot} />}
                 </View>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        <TouchableOpacity
-          style={[styles.btn, { backgroundColor: selectedLang.color }]}
-          onPress={handleContinue}
-          activeOpacity={0.85}
-        >
+        <TouchableOpacity style={styles.btn} onPress={handleContinue} activeOpacity={0.85}>
           <Text style={styles.btnText}>Let's go</Text>
         </TouchableOpacity>
 
@@ -113,18 +107,22 @@ const styles = StyleSheet.create({
     backgroundColor: SURFACE, borderRadius: 16, padding: 14,
     borderWidth: 1.5, borderColor: BORDER,
   },
-  flagImg:  { width: 48, height: 48 },
+  cardActive: { borderColor: BRAND, backgroundColor: `${BRAND}0D` },
+  flagWrap: { width: 44, height: 44, borderRadius: 10, overflow: 'hidden', backgroundColor: '#1C2C1C' },
+  flagImg: { width: 44, height: 44 },
   langName: { flex: 1, color: TEXT, fontSize: 16, fontWeight: '600' },
+  langNameActive: { color: BRAND },
   radio: {
     width: 22, height: 22, borderRadius: 11,
     borderWidth: 2, borderColor: BORDER,
     alignItems: 'center', justifyContent: 'center',
   },
-  radioDot: { width: 10, height: 10, borderRadius: 5 },
+  radioActive: { borderColor: BRAND },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: BRAND },
 
   btn: {
     borderRadius: 16, paddingVertical: 18, alignItems: 'center',
-    shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
+    backgroundColor: BRAND,
   },
   btnText: { color: '#000', fontSize: 16, fontWeight: '900', letterSpacing: 0.3 },
 });

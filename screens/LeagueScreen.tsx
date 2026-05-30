@@ -1,10 +1,11 @@
 import React, { useRef, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Animated, Image,
+  View, Text, StyleSheet, ScrollView, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { UserLevel } from '../utils/questionPicker';
-import { BUCK, GRIZ } from '../utils/imageAssets';
+import { BUCK, GRIZ, BUCK_VID, GRIZ_VID } from '../utils/imageAssets';
+import MascotVideo from '../components/MascotVideo';
 import { Faction } from './FactionScreen';
 
 const BRAND = '#10B981';
@@ -18,12 +19,14 @@ const SILVER = '#9CA3AF';
 const BRONZE = '#CD7F32';
 
 const LEAGUES = [
-  { name: 'Bronze',   emoji: '🥉', color: BRONZE,   minXP: 0 },
-  { name: 'Silver',   emoji: '🥈', color: SILVER,   minXP: 100 },
-  { name: 'Gold',     emoji: '🥇', color: GOLD,     minXP: 250 },
-  { name: 'Sapphire', emoji: '💎', color: '#60A5FA', minXP: 500 },
-  { name: 'Ruby',     emoji: '❤️‍🔥', color: '#EF4444', minXP: 1000 },
-  { name: 'Diamond',  emoji: '✨', color: '#E879F9', minXP: 2000 },
+  { name: 'Iron',      symbol: 'Fe', color: '#6B7280',  minXP: 0    },
+  { name: 'Bronze',    symbol: 'Br', color: BRONZE,     minXP: 100  },
+  { name: 'Silver',    symbol: 'Ag', color: SILVER,     minXP: 250  },
+  { name: 'Gold',      symbol: 'Au', color: GOLD,       minXP: 500  },
+  { name: 'Emerald',   symbol: 'Em', color: '#10B981',  minXP: 1000 },
+  { name: 'Sapphire',  symbol: 'Sa', color: '#60A5FA',  minXP: 2000 },
+  { name: 'Platinum',  symbol: 'Pt', color: '#E2E8F0',  minXP: 3500 },
+  { name: 'Obsidian',  symbol: 'Ob', color: '#7C3AED',  minXP: 5000 },
 ];
 
 const FAKE_LEADERBOARD = [
@@ -55,7 +58,7 @@ function LeagueBadge({ league, animated }: { league: typeof LEAGUES[0]; animated
   return (
     <Animated.View style={[badgeStyles.wrapper, { transform: [{ scale }] }]}>
       <View style={[badgeStyles.circle, { borderColor: league.color, shadowColor: league.color }]}>
-        <Text style={badgeStyles.emoji}>{league.emoji}</Text>
+        <Text style={[badgeStyles.symbol, { color: league.color }]}>{league.symbol}</Text>
       </View>
       <Text style={[badgeStyles.name, { color: league.color }]}>{league.name} League</Text>
     </Animated.View>
@@ -65,19 +68,12 @@ function LeagueBadge({ league, animated }: { league: typeof LEAGUES[0]; animated
 const badgeStyles = StyleSheet.create({
   wrapper: { alignItems: 'center', gap: 8 },
   circle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    borderWidth: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 90, height: 90, borderRadius: 45, borderWidth: 3,
+    alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#1A1A1A',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 16, elevation: 12,
   },
-  emoji: { fontSize: 40 },
+  symbol: { fontSize: 28, fontWeight: '900', letterSpacing: -1 },
   name: { fontSize: 16, fontWeight: '800' },
 });
 
@@ -114,7 +110,11 @@ export default function LeagueScreen({ userName, userXP, streak, faction }: Prop
 
           <View style={war.mascots}>
             <View style={war.side}>
-              <Image source={BUCK.weeklyWin} style={war.mascot} resizeMode="contain" />
+              <MascotVideo
+                video={BULL_XP >= BEAR_XP ? BUCK_VID.weeklyWin : BUCK_VID.idle}
+                fallback={BULL_XP >= BEAR_XP ? BUCK.weeklyWin : BUCK.default}
+                size={90}
+              />
               <Text style={[war.sideName, { color: BULL_COLOR }]}>Bulls</Text>
               <Text style={[war.sideXP, { color: BULL_COLOR }]}>{BULL_XP.toLocaleString()} XP</Text>
             </View>
@@ -129,7 +129,11 @@ export default function LeagueScreen({ userName, userXP, streak, faction }: Prop
               )}
             </View>
             <View style={war.side}>
-              <Image source={GRIZ.weeklyWin} style={war.mascot} resizeMode="contain" />
+              <MascotVideo
+                video={BEAR_XP > BULL_XP ? GRIZ_VID.weeklyWin : GRIZ_VID.idle}
+                fallback={BEAR_XP > BULL_XP ? GRIZ.weeklyWin : GRIZ.default}
+                size={90}
+              />
               <Text style={[war.sideName, { color: BEAR_COLOR }]}>Bears</Text>
               <Text style={[war.sideXP, { color: BEAR_COLOR }]}>{BEAR_XP.toLocaleString()} XP</Text>
             </View>
@@ -164,7 +168,7 @@ export default function LeagueScreen({ userName, userXP, streak, faction }: Prop
                 }]} />
               </View>
               <Text style={styles.progressLabel}>
-                {xpToNext} XP to {nextLeague.emoji} {nextLeague.name}
+                {xpToNext} XP to {nextLeague.name}
               </Text>
             </View>
           )}

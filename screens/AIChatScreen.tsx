@@ -1,12 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, KeyboardAvoidingView, Platform, Animated, Image,
+  ScrollView, KeyboardAvoidingView, Platform, Animated, Image, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../contexts/LanguageContext';
-import { IMAGES } from '../utils/imageAssets';
+import { IMAGES, BACKGROUNDS, BUCK, BUCK_VID } from '../utils/imageAssets';
+import MascotVideo from '../components/MascotVideo';
+
+// ─── Supabase Edge Function URL ───────────────────────────────────────────────
+// Nach dem Deployen der Edge Function hier die URL eintragen:
+// Format: https://<project-id>.supabase.co/functions/v1/ask-ai
+const AI_EDGE_FUNCTION_URL = 'https://evmznabsffecwmwfcitc.supabase.co/functions/v1/ask-ai';
+
+const PREMIUM_KEY = 'is_premium';
+
+const SUPPORT_EMAIL = 'bommbeach6@gmail.com';
 
 const BRAND = '#10B981';
 const BG = '#0F0F0F';
@@ -115,6 +126,8 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  outOfScope?: boolean;
+  originalQuestion?: string;
 }
 
 function findLocalAnswer(input: string): string | null {
@@ -146,12 +159,23 @@ function TypingDots() {
   );
 }
 
+function openSupport(question: string) {
+  const subject = encodeURIComponent('MarketMind Support Question');
+  const body = encodeURIComponent(`Hi,\n\nI had a question that MarketMind couldn't answer:\n\n"${question}"\n\nCould you help me?\n\nThanks!`);
+  Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`);
+}
+
 export default function AIChatScreen() {
   const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(PREMIUM_KEY).then(v => setIsPremium(v === 'true'));
+  }, []);
 
   useEffect(() => { scrollRef.current?.scrollToEnd({ animated: true }); }, [messages, loading]);
 
@@ -163,24 +187,98 @@ export default function AIChatScreen() {
     setInput('');
     setLoading(true);
 
-    await new Promise(r => setTimeout(r, 800 + Math.random() * 600));
+    try {
+      const res = await fetch(AI_EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text.trim(), history: messages.slice(-6) }),
+      });
 
-    const localAnswer = findLocalAnswer(text);
-    const answer = localAnswer ?? "Great question! This touches on an important finance concept. The key principle to understand is that financial markets are complex systems driven by supply, demand, and human psychology.\n\n**Key takeaway:** The best way to learn finance is through consistent study and practice — which is exactly what MarketMind is built for!";
-
-    setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: answer }]);
-    setLoading(false);
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: data.reply }]);
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        throw new Error('API error');
+      }
+    } catch {
+      const localAnswer = findLocalAnswer(text);
+      if (localAnswer) {
+        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: localAnswer }]);
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: "That question is outside my Finance knowledge base. I can answer topics like stocks, ETFs, Bitcoin, inflation, compound interest, and more.\n\nFor other questions, you can send a support message and I'll get back to you personally.",
+          outOfScope: true,
+          originalQuestion: text.trim(),
+        }]);
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (!isPremium) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <View style={styles.avatarWrap}>
+            <Image source={BACKGROUNDS.tradingRoom} style={styles.avatarBg} blurRadius={6} />
+            <Image source={BUCK.default} style={styles.avatarMascot} />
+          </View>
+          <View>
+            <Text style={styles.aiName}>{t('aiTitle')}</Text>
+            <Text style={styles.aiStatus}>● Premium only</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.headerBadge}>Finance AI</Text>
+          </View>
+        </View>
+        <View style={styles.gateWrap}>
+          <MascotVideo video={BUCK_VID.idle} fallback={BUCK.default} size={120} />
+          <View style={styles.gateBadge}>
+            <Text style={styles.gateBadgeText}>PRO</Text>
+          </View>
+          <Text style={styles.gateTitle}>AI Finance Advisor</Text>
+          <Text style={styles.gateSub}>
+            Ask Buck anything — stocks, crypto, market news, your portfolio strategy. Unlimited real AI answers, only for Premium members.
+          </Text>
+          <View style={styles.gateFeatures}>
+            {['Unlimited questions', 'Real-time market context', 'Personalized advice', 'No topic limits'].map((f, i) => (
+              <View key={i} style={styles.gateFeatureRow}>
+                <Text style={styles.gateFeatureCheck}>✓</Text>
+                <Text style={styles.gateFeatureText}>{f}</Text>
+              </View>
+            ))}
+          </View>
+          <TouchableOpacity
+            style={styles.gateBtn}
+            activeOpacity={0.85}
+            onPress={async () => {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              // TODO: RevenueCat purchase flow hier einbauen
+              // Für Dev-Testing: temporär auf Premium schalten
+              await AsyncStorage.setItem(PREMIUM_KEY, 'true');
+              setIsPremium(true);
+            }}
+          >
+            <Text style={styles.gateBtnText}>Upgrade to Premium — 2 CHF/month</Text>
+          </TouchableOpacity>
+          <Text style={styles.gateNote}>Cancel anytime. No commitments.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View style={styles.avatarWrap}>
-          <Image source={{ uri: IMAGES.chartHero }} style={styles.avatarBg} blurRadius={3} />
-          <View style={styles.avatarOverlay}>
-            <Text style={styles.avatarIcon}>◈</Text>
-          </View>
+          <Image source={BACKGROUNDS.tradingRoom} style={styles.avatarBg} blurRadius={6} />
+          <Image source={BUCK.default} style={styles.avatarMascot} />
         </View>
         <View>
           <Text style={styles.aiName}>{t('aiTitle')}</Text>
@@ -196,7 +294,10 @@ export default function AIChatScreen() {
 
           {messages.length === 0 && (
             <View style={styles.welcome}>
-              <Image source={{ uri: IMAGES.chartHero }} style={styles.welcomeHero} />
+              <View style={styles.welcomeHeroWrap}>
+                <Image source={BACKGROUNDS.tradingRoom} style={styles.welcomeHero} />
+                <MascotVideo video={BUCK_VID.idle} fallback={BUCK.default} width={110} height={140} style={styles.welcomeMascot} />
+              </View>
               <Text style={styles.welcomeTitle}>{t('aiSubtitle')}</Text>
               <Text style={styles.suggestedLabel}>{t('suggestedQuestions')}</Text>
               <View style={styles.suggestions}>
@@ -211,10 +312,21 @@ export default function AIChatScreen() {
           )}
 
           {messages.map(msg => (
-            <View key={msg.id} style={[styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleAI]}>
-              <Text style={[styles.bubbleText, msg.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAI]}>
-                {msg.content}
-              </Text>
+            <View key={msg.id} style={msg.role === 'user' ? styles.bubbleUserWrap : styles.bubbleAIWrap}>
+              <View style={[styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleAI]}>
+                <Text style={[styles.bubbleText, msg.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAI]}>
+                  {msg.content}
+                </Text>
+              </View>
+              {msg.outOfScope && msg.originalQuestion && (
+                <TouchableOpacity
+                  style={styles.supportBtn}
+                  onPress={() => openSupport(msg.originalQuestion!)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.supportBtnText}>✉ Contact Support</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ))}
 
@@ -255,12 +367,7 @@ const styles = StyleSheet.create({
   },
   avatarWrap: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden', position: 'relative' },
   avatarBg: { width: 44, height: 44, borderRadius: 22 },
-  avatarOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(16,185,129,0.4)',
-  },
-  avatarIcon: { color: '#FFF', fontSize: 20, fontWeight: '900' },
+  avatarMascot: { position: 'absolute', width: 36, height: 36, bottom: 0, alignSelf: 'center', resizeMode: 'contain' },
   aiName: { color: TEXT, fontSize: 16, fontWeight: '700' },
   aiStatus: { color: BRAND, fontSize: 11, marginTop: 1 },
   headerRight: { flex: 1, alignItems: 'flex-end' },
@@ -268,7 +375,9 @@ const styles = StyleSheet.create({
   messages: { flex: 1 },
   messagesContent: { padding: 16, gap: 12, paddingBottom: 8 },
   welcome: { gap: 16, paddingTop: 4 },
-  welcomeHero: { width: '100%', height: 140, borderRadius: 16, resizeMode: 'cover' },
+  welcomeHeroWrap: { width: '100%', height: 160, borderRadius: 16, overflow: 'hidden', position: 'relative' },
+  welcomeHero: { width: '100%', height: 160, borderRadius: 16, resizeMode: 'cover' },
+  welcomeMascot: { position: 'absolute', bottom: 0, right: 20, width: 110, height: 140, resizeMode: 'contain' },
   welcomeTitle: { color: MUTED, fontSize: 14, textAlign: 'center', lineHeight: 21 },
   suggestedLabel: { color: MUTED, fontSize: 13, fontWeight: '600', marginTop: 4 },
   suggestions: { gap: 8 },
@@ -280,12 +389,21 @@ const styles = StyleSheet.create({
   },
   suggestionArrow: { color: BRAND, fontSize: 16, fontWeight: '700' },
   suggestionText: { color: TEXT, fontSize: 14, flex: 1 },
+  bubbleUserWrap: { alignItems: 'flex-end' },
+  bubbleAIWrap: { alignItems: 'flex-start', gap: 8 },
   bubble: { maxWidth: '82%', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 11 },
-  bubbleUser: { alignSelf: 'flex-end', backgroundColor: BRAND, borderBottomRightRadius: 4 },
-  bubbleAI: { alignSelf: 'flex-start', backgroundColor: SURFACE, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: BORDER },
+  bubbleUser: { backgroundColor: BRAND, borderBottomRightRadius: 4 },
+  bubbleAI: { backgroundColor: SURFACE, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: BORDER },
   bubbleText: { fontSize: 14, lineHeight: 21 },
   bubbleTextUser: { color: '#000', fontWeight: '500' },
   bubbleTextAI: { color: TEXT },
+  supportBtn: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#1C2E27', borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 10,
+    borderWidth: 1, borderColor: `${BRAND}40`,
+  },
+  supportBtnText: { color: BRAND, fontSize: 13, fontWeight: '700' },
   inputArea: {
     flexDirection: 'row', alignItems: 'flex-end', gap: 10,
     paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4,
@@ -300,4 +418,27 @@ const styles = StyleSheet.create({
   sendBtnOff: { backgroundColor: SURFACE },
   sendIcon: { color: '#000', fontSize: 20, fontWeight: '900' },
   disclaimer: { color: '#3A3A3C', fontSize: 10, textAlign: 'center', paddingHorizontal: 16, paddingBottom: 8 },
+
+  gateWrap: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 28, gap: 16,
+  },
+  gateMascot: { width: 120, height: 120 },
+  gateBadge: {
+    backgroundColor: '#F59E0B', borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 4,
+  },
+  gateBadgeText: { color: '#000', fontSize: 12, fontWeight: '900', letterSpacing: 1.2 },
+  gateTitle: { color: '#FFF', fontSize: 24, fontWeight: '800', textAlign: 'center', letterSpacing: -0.3 },
+  gateSub: { color: '#8E8E93', fontSize: 14, textAlign: 'center', lineHeight: 21 },
+  gateFeatures: { width: '100%', gap: 8, paddingHorizontal: 8 },
+  gateFeatureRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  gateFeatureCheck: { color: BRAND, fontSize: 16, fontWeight: '800', width: 20 },
+  gateFeatureText: { color: '#FFF', fontSize: 14 },
+  gateBtn: {
+    width: '100%', backgroundColor: BRAND, borderRadius: 16,
+    paddingVertical: 16, alignItems: 'center',
+  },
+  gateBtnText: { color: '#000', fontSize: 15, fontWeight: '800' },
+  gateNote: { color: '#3A3A3C', fontSize: 11, textAlign: 'center' },
 });

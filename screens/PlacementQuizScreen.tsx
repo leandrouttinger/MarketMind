@@ -86,13 +86,21 @@ interface Props {
   onComplete: (level: UserLevel) => void;
 }
 
+import { useLanguage } from '../contexts/LanguageContext';
+
+function shuffleOptions(options: typeof QUESTIONS[0]['options']) {
+  return [...options].sort(() => Math.random() - 0.5);
+}
+
 export default function PlacementQuizScreen({ userName, onComplete }: Props) {
+  const { t } = useLanguage();
   const [started, setStarted] = useState(false);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
+  const [shuffledOptions, setShuffledOptions] = useState(() => QUESTIONS.map(q => shuffleOptions(q.options)));
 
   const fadeIn = useRef(new Animated.Value(0)).current;
 
@@ -103,6 +111,7 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
   const question = QUESTIONS[index];
   const progress = (index + 1) / QUESTIONS.length;
   const isCorrect = selected === question?.correct;
+  const currentOptions = shuffledOptions[index] ?? question?.options;
 
   const handleSelect = async (id: string) => {
     if (revealed) return;
@@ -130,9 +139,9 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
   };
 
   const getLevel = () => {
-    if (score <= 1) return { label: 'Beginner',     emoji: '🌱', color: '#60A5FA', desc: "Everyone starts somewhere. Your path is set." };
-    if (score <= 3) return { label: 'Intermediate', emoji: '📊', color: BRAND,     desc: "Solid base. Time to level up from here." };
-    return             { label: 'Advanced',       emoji: '🏆', color: '#F59E0B', desc: "Strong. We'll keep you challenged." };
+    if (score <= 1) return { label: t('levelBeginner'),     color: '#60A5FA', desc: t('levelDescBeginner') };
+    if (score <= 3) return { label: t('levelIntermediate'), color: BRAND,     desc: t('levelDescIntermediate') };
+    return             { label: t('levelAdvanced'),       color: '#F59E0B', desc: t('levelDescAdvanced') };
   };
 
   // ── Intro screen ──────────────────────────────────────────────────────────
@@ -144,15 +153,15 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
 
           <View style={styles.introTextBlock}>
             <Text style={styles.introReady}>
-              Ready,{'\n'}{userName}?
+              {t('readyName').replace('{name}', userName)}
             </Text>
             <Text style={styles.introDesc}>
-              5 questions. No stress.{'\n'}We find your level.
+              {t('fiveQuestionsNoPressure')}
             </Text>
           </View>
 
           <View style={styles.introBadges}>
-            {['5 Questions', '2 min', 'No stress'].map((b, i) => (
+            {[t('placementBadge1'), t('placementBadge2'), t('placementBadge3')].map((b, i) => (
               <View key={i} style={styles.badge}>
                 <Text style={styles.badgeText}>{b}</Text>
               </View>
@@ -164,7 +173,7 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
             onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); setStarted(true); }}
             activeOpacity={0.85}
           >
-            <Text style={styles.startBtnText}>Let's find my level →</Text>
+            <Text style={styles.startBtnText}>{t('findMyLevel')}</Text>
           </TouchableOpacity>
         </Animated.View>
       </SafeAreaView>
@@ -178,18 +187,18 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
       <SafeAreaView style={styles.container}>
         <View style={styles.resultWrap}>
           <MascotVideo video={BUCK_VID.levelUp} fallback={BUCK_IMGS.levelUp} size={160} loop={false} />
-          <Text style={styles.resultScore}>{score}/{QUESTIONS.length} correct</Text>
-          <Text style={[styles.resultLevel, { color: level.color }]}>{level.label} Investor</Text>
+          <Text style={styles.resultScore}>{t('resultCorrect').replace('{score}', String(score)).replace('{total}', String(QUESTIONS.length))}</Text>
+          <Text style={[styles.resultLevel, { color: level.color }]}>{level.label}</Text>
           <Text style={styles.resultDesc}>{level.desc}</Text>
           <Text style={styles.resultName}>
-            Great start, {userName}. Your daily quiz is now personalized.
+            {t('greatStart').replace('{name}', userName)}
           </Text>
           <TouchableOpacity
             style={styles.continueBtn}
             onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); onComplete(levelFromScore(score, QUESTIONS.length)); }}
             activeOpacity={0.85}
           >
-            <Text style={styles.continueBtnText}>Start Learning →</Text>
+            <Text style={styles.continueBtnText}>{t('startLearningBtn')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -216,7 +225,7 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
         <Text style={styles.questionText}>{question.text}</Text>
 
         <View style={styles.options}>
-          {question.options.map((opt) => {
+          {currentOptions.map((opt) => {
             const isSelected = selected === opt.id;
             const isRight = revealed && opt.id === question.correct;
             const isWrong = revealed && isSelected && !isRight;
@@ -242,7 +251,7 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
 
         {revealed && (
           <View style={[styles.explanation, isCorrect ? styles.explanationCorrect : styles.explanationWrong]}>
-            <Text style={styles.explanationHeader}>{isCorrect ? '🎯 Correct!' : '✗ Not quite.'}</Text>
+            <Text style={styles.explanationHeader}>{isCorrect ? t('correct') : t('notQuite')}</Text>
             <Text style={styles.explanationText}>{question.explanation}</Text>
           </View>
         )}
