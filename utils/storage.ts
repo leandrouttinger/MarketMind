@@ -2,16 +2,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserLevel } from './questionPicker';
 
 const K = {
-  USER_NAME:         'mm_userName',
-  USER_LEVEL:        'mm_userLevel',
-  USER_GOALS:        'mm_userGoals',
-  STREAK:            'mm_streak',
-  XP:                'mm_xp',
-  TOTAL_QUESTIONS:   'mm_totalQuestions',
-  LAST_PLAYED_DATE:  'mm_lastPlayedDate',
-  COMPLETED_LESSONS: 'mm_completedLessons',
-  QUIZ_DONE_TODAY:   'mm_quizDoneToday',
-  ONBOARDING_DONE:   'mm_onboardingDone',
+  USER_NAME:            'mm_userName',
+  USER_LEVEL:           'mm_userLevel',
+  USER_GOALS:           'mm_userGoals',
+  STREAK:               'mm_streak',
+  XP:                   'mm_xp',
+  TOTAL_QUESTIONS:      'mm_totalQuestions',
+  LAST_PLAYED_DATE:     'mm_lastPlayedDate',
+  COMPLETED_LESSONS:    'mm_completedLessons',
+  QUIZ_DONE_TODAY:      'mm_quizDoneToday',
+  ONBOARDING_DONE:      'mm_onboardingDone',
+  FACTION:              'mm_faction',
+  FACTION_SWITCHED_AT:  'mm_factionSwitchedAt',
 };
 
 export interface SavedState {
@@ -24,6 +26,8 @@ export interface SavedState {
   lastPlayedDate: string | null;
   completedLessons: string[];
   quizDoneToday: boolean;
+  faction: 'bull' | 'bear' | null;
+  factionSwitchedAt: string | null;
 }
 
 function isSameDay(a: Date, b: Date) {
@@ -57,8 +61,10 @@ export async function loadState(): Promise<SavedState | null> {
     xp:               parseInt(m[K.XP]                  ?? '0', 10),
     totalQuestions:   parseInt(m[K.TOTAL_QUESTIONS]      ?? '0', 10),
     lastPlayedDate:   lastPlayedRaw,
-    completedLessons: JSON.parse(m[K.COMPLETED_LESSONS] ?? '[]'),
+    completedLessons:  JSON.parse(m[K.COMPLETED_LESSONS] ?? '[]'),
     quizDoneToday,
+    faction:           (m[K.FACTION] as 'bull' | 'bear' | null) ?? null,
+    factionSwitchedAt: m[K.FACTION_SWITCHED_AT] || null,
   };
 }
 
@@ -72,8 +78,10 @@ export async function saveState(s: Partial<SavedState> & { onboardingDone?: bool
   if (s.totalQuestions   !== undefined) pairs.push([K.TOTAL_QUESTIONS,   String(s.totalQuestions)]);
   if (s.lastPlayedDate   !== undefined) pairs.push([K.LAST_PLAYED_DATE,  s.lastPlayedDate ?? '']);
   if (s.completedLessons !== undefined) pairs.push([K.COMPLETED_LESSONS, JSON.stringify(s.completedLessons)]);
-  if (s.quizDoneToday    !== undefined) pairs.push([K.QUIZ_DONE_TODAY,   String(s.quizDoneToday)]);
-  if (s.onboardingDone   !== undefined) pairs.push([K.ONBOARDING_DONE,   String(s.onboardingDone)]);
+  if (s.quizDoneToday    !== undefined) pairs.push([K.QUIZ_DONE_TODAY,      String(s.quizDoneToday)]);
+  if (s.onboardingDone   !== undefined) pairs.push([K.ONBOARDING_DONE,      String(s.onboardingDone)]);
+  if (s.faction          !== undefined) pairs.push([K.FACTION,               s.faction ?? '']);
+  if (s.factionSwitchedAt !== undefined) pairs.push([K.FACTION_SWITCHED_AT,  s.factionSwitchedAt ?? '']);
   if (pairs.length > 0) await AsyncStorage.multiSet(pairs);
 }
 

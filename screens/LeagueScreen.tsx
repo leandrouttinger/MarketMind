@@ -1,13 +1,11 @@
 import React, { useRef, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Animated,
+  View, Text, StyleSheet, ScrollView, Animated, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { UserLevel } from '../utils/questionPicker';
+import { BUCK, GRIZ } from '../utils/imageAssets';
+import { Faction } from './FactionScreen';
 
 const BRAND = '#10B981';
 const BG = '#0F0F0F';
@@ -83,13 +81,20 @@ const badgeStyles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: '800' },
 });
 
+const BULL_COLOR = '#10B981';
+const BEAR_COLOR = '#3B82F6';
+const BULL_XP = 24530;
+const BEAR_XP = 21840;
+const TOTAL_XP = BULL_XP + BEAR_XP;
+
 interface Props {
   userName: string;
   userXP: number;
   streak: number;
+  faction: Faction | null;
 }
 
-export default function LeagueScreen({ userName, userXP, streak }: Props) {
+export default function LeagueScreen({ userName, userXP, streak, faction }: Props) {
   const currentLeague = LEAGUES.filter(l => l.minXP <= userXP).pop() ?? LEAGUES[0];
   const nextLeague = LEAGUES.find(l => l.minXP > userXP);
   const progressToNext = nextLeague
@@ -101,6 +106,43 @@ export default function LeagueScreen({ userName, userXP, streak }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+
+        {/* Bulls vs Bears War */}
+        <View style={war.card}>
+          <Text style={war.title}>This Week's War</Text>
+          <Text style={war.sub}>Every quiz earns XP for your faction</Text>
+
+          <View style={war.mascots}>
+            <View style={war.side}>
+              <Image source={BUCK.weeklyWin} style={war.mascot} resizeMode="contain" />
+              <Text style={[war.sideName, { color: BULL_COLOR }]}>Bulls</Text>
+              <Text style={[war.sideXP, { color: BULL_COLOR }]}>{BULL_XP.toLocaleString()} XP</Text>
+            </View>
+            <View style={war.vsWrap}>
+              <Text style={war.vs}>VS</Text>
+              {faction && (
+                <View style={[war.yourFaction, { backgroundColor: faction === 'bull' ? `${BULL_COLOR}20` : `${BEAR_COLOR}20`, borderColor: faction === 'bull' ? BULL_COLOR : BEAR_COLOR }]}>
+                  <Text style={[war.yourFactionText, { color: faction === 'bull' ? BULL_COLOR : BEAR_COLOR }]}>
+                    Your side
+                  </Text>
+                </View>
+              )}
+            </View>
+            <View style={war.side}>
+              <Image source={GRIZ.weeklyWin} style={war.mascot} resizeMode="contain" />
+              <Text style={[war.sideName, { color: BEAR_COLOR }]}>Bears</Text>
+              <Text style={[war.sideXP, { color: BEAR_COLOR }]}>{BEAR_XP.toLocaleString()} XP</Text>
+            </View>
+          </View>
+
+          <View style={war.barWrap}>
+            <View style={[war.barFill, { width: `${(BULL_XP / TOTAL_XP) * 100}%`, backgroundColor: BULL_COLOR }]} />
+            <View style={[war.barFill, { width: `${(BEAR_XP / TOTAL_XP) * 100}%`, backgroundColor: BEAR_COLOR }]} />
+          </View>
+          <Text style={war.barLabel}>
+            Bulls lead by {(BULL_XP - BEAR_XP).toLocaleString()} XP · Resets Sunday
+          </Text>
+        </View>
 
         {/* Header */}
         <Text style={styles.screenTitle}>Leagues</Text>
@@ -188,6 +230,33 @@ export default function LeagueScreen({ userName, userXP, streak }: Props) {
     </SafeAreaView>
   );
 }
+
+const war = StyleSheet.create({
+  card: {
+    backgroundColor: '#111', borderRadius: 22, padding: 20,
+    gap: 12, borderWidth: 1, borderColor: '#222',
+  },
+  title: { color: '#FFF', fontSize: 18, fontWeight: '800' },
+  sub: { color: '#6B7280', fontSize: 13, marginTop: -6 },
+  mascots: { flexDirection: 'row', alignItems: 'center' },
+  side: { flex: 1, alignItems: 'center', gap: 4 },
+  mascot: { width: 80, height: 80 },
+  sideName: { fontSize: 14, fontWeight: '800' },
+  sideXP: { fontSize: 12, fontWeight: '600' },
+  vsWrap: { alignItems: 'center', gap: 8, paddingHorizontal: 8 },
+  vs: { color: '#444', fontSize: 18, fontWeight: '900' },
+  yourFaction: {
+    borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
+    borderWidth: 1,
+  },
+  yourFactionText: { fontSize: 10, fontWeight: '700' },
+  barWrap: {
+    flexDirection: 'row', height: 8,
+    backgroundColor: '#1A1A1A', borderRadius: 99, overflow: 'hidden',
+  },
+  barFill: { height: '100%' },
+  barLabel: { color: '#6B7280', fontSize: 11, textAlign: 'center' },
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },

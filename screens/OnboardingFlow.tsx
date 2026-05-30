@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  TextInput, KeyboardAvoidingView, Platform, Animated,
+  TextInput, KeyboardAvoidingView, Platform, Animated, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { ICONS, BUCK } from '../utils/imageAssets';
 
 const BRAND = '#10B981';
 const BG = '#0F0F0F';
@@ -13,65 +14,15 @@ const BORDER = '#2C2C2E';
 const TEXT = '#FFFFFF';
 const MUTED = '#8E8E93';
 
-// ─── Placeholder icon component (swap with Banana AI image later) ─────────────
-const SHAPES = ['◆', '○', '▲', '⬡', '◈'];
-const SHAPE_COLORS = ['#10B981', '#60A5FA', '#F59E0B', '#E879F9', '#F97316'];
-
-function PlaceholderIcon({ index, selected }: { index: number; selected: boolean }) {
-  const color = SHAPE_COLORS[index % SHAPE_COLORS.length];
-  return (
-    <View style={[ph.box, { borderColor: selected ? color : `${color}40`, backgroundColor: `${color}10` }]}>
-      <Text style={[ph.shape, { color: selected ? color : `${color}60` }]}>
-        {SHAPES[index % SHAPES.length]}
-      </Text>
-    </View>
-  );
-}
-
-const ph = StyleSheet.create({
-  box: {
-    width: 50, height: 50, borderRadius: 14,
-    borderWidth: 1.5, alignItems: 'center', justifyContent: 'center',
-  },
-  shape: { fontSize: 22, fontWeight: '900' },
-});
-
-// ─── Mascot placeholder (swap with Banana AI character later) ────────────────
-function MascotPlaceholder({ size = 160, label = 'MASCOT' }: { size?: number; label?: string }) {
-  const pulse = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.04, duration: 1200, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 1200, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
-
-  return (
-    <Animated.View style={[mp.wrap, { width: size, height: size, borderRadius: size * 0.28 }, { transform: [{ scale: pulse }] }]}>
-      <Text style={mp.icon}>◈</Text>
-      <Text style={mp.label}>{label}</Text>
-      <Text style={mp.sub}>Banana AI</Text>
-    </Animated.View>
-  );
-}
-
-const mp = StyleSheet.create({
-  wrap: {
-    backgroundColor: `${BRAND}0A`, borderWidth: 1.5,
-    borderColor: `${BRAND}30`, alignItems: 'center',
-    justifyContent: 'center', gap: 4,
-  },
-  icon: { fontSize: 44, color: `${BRAND}60` },
-  label: { color: `${BRAND}80`, fontSize: 11, fontWeight: '800', letterSpacing: 1.5 },
-  sub: { color: `${BRAND}40`, fontSize: 9, letterSpacing: 0.8 },
-});
-
-// ─── Step definitions ─────────────────────────────────────────────────────────
 type StepType = 'single' | 'multi' | 'transition' | 'notifications';
 
-interface Option { id: string; label: string; sub?: string }
+interface Option {
+  id: string;
+  label: string;
+  sub?: string;
+  icon: any; // require() image
+}
+
 interface Step {
   type: StepType;
   title: string;
@@ -84,30 +35,30 @@ const STEPS: Step[] = [
     type: 'single',
     title: 'Why MarketMind?',
     options: [
-      { id: 'a', label: 'Learn how to invest' },
-      { id: 'b', label: 'Understand the markets' },
-      { id: 'c', label: 'School or work' },
-      { id: 'd', label: 'Just curious' },
+      { id: 'a', icon: ICONS.invest,   label: 'Learn how to invest' },
+      { id: 'b', icon: ICONS.markets,  label: 'Understand the markets' },
+      { id: 'c', icon: ICONS.school,   label: 'School or work' },
+      { id: 'd', icon: ICONS.curious,  label: 'Just curious' },
     ],
   },
   {
     type: 'single',
     title: 'How did you\nfind us?',
     options: [
-      { id: 'a', label: 'Instagram / Social Media' },
-      { id: 'b', label: 'Friend or family' },
-      { id: 'c', label: 'ChatGPT / AI' },
-      { id: 'd', label: 'Other...' },
+      { id: 'a', icon: ICONS.social,   label: 'Instagram / Social Media' },
+      { id: 'b', icon: ICONS.friends,  label: 'Friend or family' },
+      { id: 'c', icon: ICONS.ai,       label: 'ChatGPT / AI' },
+      { id: 'd', icon: ICONS.other,    label: 'Other...' },
     ],
   },
   {
     type: 'single',
     title: 'Your finance\nlevel right now?',
     options: [
-      { id: 'a', label: 'Beginner',     sub: 'Just getting started' },
-      { id: 'b', label: 'Basic',        sub: 'Know the basics' },
-      { id: 'c', label: 'Intermediate', sub: 'Stocks and markets' },
-      { id: 'd', label: 'Advanced',     sub: 'I actively trade' },
+      { id: 'a', icon: ICONS.beginner,     label: 'Beginner',     sub: 'Just getting started' },
+      { id: 'b', icon: ICONS.basic,        label: 'Basic',        sub: 'Know the basics' },
+      { id: 'c', icon: ICONS.intermediate, label: 'Intermediate', sub: 'Stocks and markets' },
+      { id: 'd', icon: ICONS.advanced,     label: 'Advanced',     sub: 'I actively trade' },
     ],
   },
   {
@@ -120,21 +71,21 @@ const STEPS: Step[] = [
     title: 'What is your\nmain goal?',
     subtitle: 'Pick all that fit',
     options: [
-      { id: 'a', label: 'Build long-term wealth' },
-      { id: 'b', label: 'Start investing smart' },
-      { id: 'c', label: 'Make better money decisions' },
-      { id: 'd', label: 'Career or education' },
-      { id: 'e', label: 'I just love finance' },
+      { id: 'a', icon: ICONS.wealth,    label: 'Build long-term wealth' },
+      { id: 'b', icon: ICONS.investing, label: 'Start investing smart' },
+      { id: 'c', icon: ICONS.decisions, label: 'Make better money decisions' },
+      { id: 'd', icon: ICONS.career,    label: 'Career or education' },
+      { id: 'e', icon: ICONS.love,      label: 'I just love finance' },
     ],
   },
   {
     type: 'single',
     title: 'Daily time\ncommitment?',
     options: [
-      { id: 'a', label: '5 minutes',   sub: 'Quick wins every day' },
-      { id: 'b', label: '10 minutes',  sub: 'Steady and consistent' },
-      { id: 'c', label: '15 minutes',  sub: 'Serious progress' },
-      { id: 'd', label: '20+ minutes', sub: 'All in' },
+      { id: 'a', icon: ICONS.min5,  label: '5 minutes',   sub: 'Quick wins every day' },
+      { id: 'b', icon: ICONS.min10, label: '10 minutes',  sub: 'Steady and consistent' },
+      { id: 'c', icon: ICONS.min15, label: '15 minutes',  sub: 'Serious progress' },
+      { id: 'd', icon: ICONS.min20, label: '20+ minutes', sub: 'All in' },
     ],
   },
   {
@@ -160,15 +111,15 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
   const current = STEPS[step];
   const progress = (step + 1) / STEPS.length;
   const isTransition = current.type === 'transition';
-  const isMulti = current.type === 'multi';
-  const isNotif = current.type === 'notifications';
+  const isMulti      = current.type === 'multi';
+  const isNotif      = current.type === 'notifications';
   const showCustomInput = selected.includes('d') && step === 1;
   const canContinue =
     isTransition || isNotif ||
     (selected.length > 0 && (!showCustomInput || customText.trim().length > 0));
 
   const animateIn = () => {
-    slideAnim.setValue(24);
+    slideAnim.setValue(20);
     Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 80, friction: 12 }).start();
   };
 
@@ -202,7 +153,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
       {/* Progress */}
       <View style={styles.header}>
         <View style={styles.progressTrack}>
-          <Animated.View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
         <Text style={styles.stepCount}>{step + 1}/{STEPS.length}</Text>
       </View>
@@ -213,23 +164,19 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
           <Text style={styles.title}>{current.title.replace('{name}', userName)}</Text>
           {current.subtitle && <Text style={styles.subtitle}>{current.subtitle}</Text>}
 
-          {/* ── Transition screen ── */}
+          {/* ── Transition ── */}
           {isTransition && (
             <View style={styles.transitionContent}>
-              <MascotPlaceholder size={170} label="MASCOT" />
-              <View style={styles.transitionTextBlock}>
-                <Text style={styles.transitionName}>Ready, {userName}?</Text>
-                <Text style={styles.transitionDesc}>
-                  5 questions. No pressure.
-                </Text>
-              </View>
+              <Image source={BUCK.default} style={styles.transitionMascot} resizeMode="contain" />
+              <Text style={styles.transitionName}>Ready, {userName}?</Text>
+              <Text style={styles.transitionDesc}>5 questions. No pressure.</Text>
             </View>
           )}
 
           {/* ── Options ── */}
           {current.options && (
             <View style={styles.options}>
-              {current.options.map((opt, i) => {
+              {current.options.map((opt) => {
                 const isSelected = selected.includes(opt.id);
                 return (
                   <TouchableOpacity
@@ -238,7 +185,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
                     onPress={() => handleOption(opt.id)}
                     activeOpacity={0.75}
                   >
-                    <PlaceholderIcon index={i} selected={isSelected} />
+                    <Image source={opt.icon} style={styles.optionIcon} resizeMode="contain" />
                     <View style={styles.optionText}>
                       <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
                         {opt.label}
@@ -267,13 +214,14 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
             </View>
           )}
 
-          {/* ── Notification screen ── */}
+          {/* ── Notifications ── */}
           {isNotif && (
             <View style={styles.notifCard}>
-              <MascotPlaceholder size={120} label="REMINDER" />
+              <Image source={BUCK.default} style={styles.notifMascot} resizeMode="contain" />
+              <Image source={ICONS.bell} style={styles.notifBell} resizeMode="contain" />
               <Text style={styles.notifStat}>
                 Users with reminders are{' '}
-                <Text style={styles.notifHighlight}>3× more consistent.</Text>
+                <Text style={styles.notifHighlight}>3x more consistent.</Text>
               </Text>
               <View style={styles.notifFactRow}>
                 <View style={styles.notifFact}>
@@ -313,7 +261,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
             activeOpacity={0.85}
           >
             <Text style={[styles.continueBtnText, !canContinue && styles.continueBtnTextOff]}>
-              {step === STEPS.length - 1 ? "Let's go! →" : 'Continue →'}
+              {step === STEPS.length - 1 ? "Let's go!" : 'Continue →'}
             </Text>
           </TouchableOpacity>
           {isNotif && !notifEnabled && (
@@ -341,26 +289,24 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16 },
 
-  title: {
-    color: TEXT, fontSize: 30, fontWeight: '800',
-    lineHeight: 38, letterSpacing: -0.6, marginBottom: 8,
-  },
+  title: { color: TEXT, fontSize: 30, fontWeight: '800', lineHeight: 38, letterSpacing: -0.6, marginBottom: 8 },
   subtitle: { color: MUTED, fontSize: 15, lineHeight: 22, marginBottom: 28 },
 
   // Transition
-  transitionContent: { alignItems: 'center', paddingVertical: 28, gap: 24 },
-  transitionTextBlock: { alignItems: 'center', gap: 8 },
+  transitionContent: { alignItems: 'center', paddingVertical: 20, gap: 12 },
+  transitionMascot: { width: 180, height: 180 },
   transitionName: { color: BRAND, fontSize: 22, fontWeight: '800' },
-  transitionDesc: { color: MUTED, fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  transitionDesc: { color: MUTED, fontSize: 15, textAlign: 'center' },
 
   // Options
   options: { gap: 11, marginTop: 4 },
   option: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: SURFACE, borderRadius: 16,
-    padding: 14, borderWidth: 1.5, borderColor: BORDER, gap: 14,
+    padding: 12, borderWidth: 1.5, borderColor: BORDER, gap: 12,
   },
   optionSelected: { borderColor: BRAND, backgroundColor: `${BRAND}0D` },
+  optionIcon: { width: 48, height: 48, borderRadius: 12 },
   optionText: { flex: 1, gap: 2 },
   optionLabel: { color: TEXT, fontSize: 15, fontWeight: '600' },
   optionLabelSelected: { color: BRAND },
@@ -380,9 +326,11 @@ const styles = StyleSheet.create({
   // Notifications
   notifCard: {
     backgroundColor: SURFACE, borderRadius: 22,
-    padding: 24, alignItems: 'center', gap: 18,
+    padding: 24, alignItems: 'center', gap: 14,
     marginTop: 8, borderWidth: 1, borderColor: BORDER,
   },
+  notifMascot: { width: 120, height: 120 },
+  notifBell: { width: 56, height: 56, marginTop: -8 },
   notifStat: { color: MUTED, fontSize: 15, textAlign: 'center', lineHeight: 22 },
   notifHighlight: { color: TEXT, fontWeight: '700' },
   notifFactRow: { flexDirection: 'row', width: '100%', alignItems: 'center' },

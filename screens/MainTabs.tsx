@@ -15,6 +15,7 @@ import { getXPForAction } from '../utils/xpSystem';
 import { IMAGES } from '../utils/imageAssets';
 import { saveState } from '../utils/storage';
 import { getCurrentUser, upsertProfile } from '../utils/supabase';
+import { Faction } from './FactionScreen';
 
 const BRAND = '#10B981';
 const BG = '#0F0F0F';
@@ -58,6 +59,7 @@ interface Props {
   lastPlayedDate: string | null;
   completedLessons: string[];
   quizDoneToday: boolean;
+  faction: Faction | null;
   onStreakUpdate: (s: number) => void;
   onXPUpdate: (xp: number) => void;
   onQuestionsUpdate: (count: number) => void;
@@ -70,6 +72,7 @@ export default function MainTabs({
   lastPlayedDate: initialLastPlayed,
   completedLessons: initialCompleted,
   quizDoneToday: initialQuizDone,
+  faction,
   onStreakUpdate, onXPUpdate, onQuestionsUpdate, onLevelChange,
 }: Props) {
   const { t } = useLanguage();
@@ -235,7 +238,7 @@ export default function MainTabs({
             onStartDailyChallenge={handleDailyChallenge}
           />
         )}
-        {activeTab === 'league' && <LeagueScreen userName={userName} userXP={currentXP} streak={currentStreak} />}
+        {activeTab === 'league' && <LeagueScreen userName={userName} userXP={currentXP} streak={currentStreak} faction={faction} />}
         {activeTab === 'news' && <NewsScreen />}
         {activeTab === 'ai' && <AIChatScreen />}
         {activeTab === 'profile' && (

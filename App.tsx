@@ -7,11 +7,12 @@ import LanguageScreen from './screens/LanguageScreen';
 import NameScreen from './screens/NameScreen';
 import OnboardingFlow from './screens/OnboardingFlow';
 import PlacementQuizScreen from './screens/PlacementQuizScreen';
+import FactionScreen, { Faction } from './screens/FactionScreen';
 import MainTabs from './screens/MainTabs';
 import { UserLevel } from './utils/questionPicker';
 import { loadState, saveState } from './utils/storage';
 
-type Screen = 'loading' | 'language' | 'splash' | 'name' | 'onboarding' | 'placement' | 'main';
+type Screen = 'loading' | 'language' | 'splash' | 'name' | 'onboarding' | 'placement' | 'faction' | 'main';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('loading');
@@ -24,6 +25,7 @@ export default function App() {
   const [lastPlayedDate, setLastPlayedDate] = useState<string | null>(null);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [quizDoneToday, setQuizDoneToday] = useState(false);
+  const [faction, setFaction] = useState<Faction | null>(null);
 
   useEffect(() => {
     loadState().then(saved => {
@@ -37,6 +39,7 @@ export default function App() {
         setLastPlayedDate(saved.lastPlayedDate);
         setCompletedLessons(saved.completedLessons);
         setQuizDoneToday(saved.quizDoneToday);
+        setFaction(saved.faction);
         setScreen('main');
       } else {
         setScreen('language');
@@ -89,7 +92,19 @@ export default function App() {
             userName={userName}
             onComplete={(level) => {
               setUserLevel(level);
-              saveState({ userLevel: level, onboardingDone: true });
+              saveState({ userLevel: level });
+              setScreen('faction');
+            }}
+          />
+        );
+
+      case 'faction':
+        return (
+          <FactionScreen
+            userName={userName}
+            onComplete={(f) => {
+              setFaction(f);
+              saveState({ faction: f, factionSwitchedAt: new Date().toISOString(), onboardingDone: true });
               setScreen('main');
             }}
           />
@@ -107,6 +122,7 @@ export default function App() {
             lastPlayedDate={lastPlayedDate}
             completedLessons={completedLessons}
             quizDoneToday={quizDoneToday}
+            faction={faction}
             onStreakUpdate={setStreak}
             onXPUpdate={setXP}
             onQuestionsUpdate={setTotalQuestions}
