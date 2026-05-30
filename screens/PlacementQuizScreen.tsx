@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -78,33 +78,7 @@ const QUESTIONS = [
 ];
 
 // ── Mascot placeholder ────────────────────────────────────────────────────────
-function MascotPlaceholder({ size = 160 }: { size?: number }) {
-  const pulse = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.05, duration: 1100, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 1100, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
-  return (
-    <Animated.View style={[mp.wrap, { width: size, height: size, borderRadius: size * 0.28 }, { transform: [{ scale: pulse }] }]}>
-      <Text style={mp.icon}>◈</Text>
-      <Text style={mp.label}>MASCOT</Text>
-      <Text style={mp.sub}>Banana AI</Text>
-    </Animated.View>
-  );
-}
-const mp = StyleSheet.create({
-  wrap: {
-    backgroundColor: `${BRAND}0A`, borderWidth: 1.5,
-    borderColor: `${BRAND}35`, alignItems: 'center', justifyContent: 'center', gap: 4,
-  },
-  icon: { fontSize: 40, color: `${BRAND}60` },
-  label: { color: `${BRAND}80`, fontSize: 11, fontWeight: '800', letterSpacing: 1.5 },
-  sub: { color: `${BRAND}40`, fontSize: 9, letterSpacing: 0.8 },
-});
+import { BUCK as BUCK_IMGS } from '../utils/imageAssets';
 
 interface Props {
   userName: string;
@@ -165,7 +139,7 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
     return (
       <SafeAreaView style={styles.container}>
         <Animated.View style={[styles.introWrap, { opacity: fadeIn }]}>
-          <MascotPlaceholder size={180} />
+          <Image source={BUCK_IMGS.default} style={{ width: 200, height: 200 }} resizeMode="contain" />
 
           <View style={styles.introTextBlock}>
             <Text style={styles.introReady}>
@@ -202,7 +176,7 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.resultWrap}>
-          <Text style={styles.resultEmoji}>{level.emoji}</Text>
+          <Image source={BUCK_IMGS.levelUp} style={{ width: 160, height: 160 }} resizeMode="contain" />
           <Text style={styles.resultScore}>{score}/{QUESTIONS.length} correct</Text>
           <Text style={[styles.resultLevel, { color: level.color }]}>{level.label} Investor</Text>
           <Text style={styles.resultDesc}>{level.desc}</Text>

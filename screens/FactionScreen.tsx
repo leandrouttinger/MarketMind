@@ -1,21 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Image, Animated, Dimensions,
+  View, Text, TouchableOpacity, StyleSheet, Image, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { BUCK, GRIZ, BOTH } from '../utils/imageAssets';
+import { BUCK, GRIZ } from '../utils/imageAssets';
 
-const BRAND  = '#10B981';
-const BG     = '#0F0F0F';
-const SURFACE = '#1A1A1A';
-const BORDER  = '#2C2C2E';
-const TEXT    = '#FFFFFF';
-const MUTED   = '#6B7280';
+const BG         = '#0F0F0F';
+const BORDER     = '#2C2C2E';
+const TEXT       = '#FFFFFF';
+const MUTED      = '#6B7280';
 const BULL_COLOR = '#10B981';
 const BEAR_COLOR = '#3B82F6';
-
-const W = Dimensions.get('window').width;
 
 export type Faction = 'bull' | 'bear';
 
@@ -26,26 +22,28 @@ interface Props {
 
 export default function FactionScreen({ userName, onComplete }: Props) {
   const [selected, setSelected] = useState<Faction | null>(null);
-  const fadeIn   = useRef(new Animated.Value(0)).current;
+  const fadeIn    = useRef(new Animated.Value(0)).current;
   const bullScale = useRef(new Animated.Value(1)).current;
   const bearScale = useRef(new Animated.Value(1)).current;
 
-  // Mock global ratio
   const BULL_PCT = 54;
   const BEAR_PCT = 46;
+  const BULL_XP  = 24530;
+  const BEAR_XP  = 21840;
+  const TOTAL_XP = BULL_XP + BEAR_XP;
 
   useEffect(() => {
-    Animated.timing(fadeIn, { toValue: 1, duration: 700, useNativeDriver: true }).start();
+    Animated.timing(fadeIn, { toValue: 1, duration: 600, useNativeDriver: true }).start();
   }, []);
 
   const handleSelect = async (faction: Faction) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setSelected(faction);
-    const scale = faction === 'bull' ? bullScale : bearScale;
-    const other = faction === 'bull' ? bearScale : bullScale;
+    const s = faction === 'bull' ? bullScale : bearScale;
+    const o = faction === 'bull' ? bearScale : bullScale;
     Animated.parallel([
-      Animated.spring(scale, { toValue: 1.06, useNativeDriver: true, tension: 200, friction: 6 }),
-      Animated.spring(other, { toValue: 0.94, useNativeDriver: true, tension: 200, friction: 6 }),
+      Animated.spring(s, { toValue: 1.08, useNativeDriver: true, tension: 180, friction: 6 }),
+      Animated.spring(o, { toValue: 0.88, useNativeDriver: true, tension: 180, friction: 6 }),
     ]).start();
   };
 
@@ -55,7 +53,7 @@ export default function FactionScreen({ userName, onComplete }: Props) {
     onComplete(selected);
   };
 
-  const color = selected === 'bull' ? BULL_COLOR : selected === 'bear' ? BEAR_COLOR : BRAND;
+  const btnColor = selected === 'bull' ? BULL_COLOR : selected === 'bear' ? BEAR_COLOR : '#2C2C2E';
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -65,75 +63,93 @@ export default function FactionScreen({ userName, onComplete }: Props) {
         <View style={styles.header}>
           <Text style={styles.title}>Choose your side.</Text>
           <Text style={styles.subtitle}>
-            {userName}, every quiz you complete earns XP for your faction.{'\n'}
-            Switch once per month if you change your mind.
+            Every quiz earns XP for your faction.{'\n'}
+            Switch once per month.
           </Text>
         </View>
 
-        {/* Global ratio bar */}
+        {/* Ratio bar */}
         <View style={styles.ratioWrap}>
           <View style={styles.ratioBar}>
-            <View style={[styles.ratioFill, { width: `${BULL_PCT}%`, backgroundColor: BULL_COLOR }]} />
+            <View style={[styles.ratioFillBull, { flex: BULL_PCT }]} />
+            <View style={[styles.ratioFillBear, { flex: BEAR_PCT }]} />
           </View>
           <View style={styles.ratioLabels}>
-            <Text style={[styles.ratioLabel, { color: BULL_COLOR }]}>🐂 Bulls {BULL_PCT}%</Text>
-            <Text style={[styles.ratioLabel, { color: BEAR_COLOR }]}>{BEAR_PCT}% Bears 🐻</Text>
+            <Text style={[styles.ratioLabel, { color: BULL_COLOR }]}>Bulls {BULL_PCT}%</Text>
+            <Text style={styles.ratioCenter}>This week</Text>
+            <Text style={[styles.ratioLabel, { color: BEAR_COLOR }]}>{BEAR_PCT}% Bears</Text>
           </View>
-          <Text style={styles.ratioHint}>Global this week</Text>
         </View>
 
-        {/* Both mascots / selection cards */}
-        <View style={styles.cards}>
+        {/* Mascots — free on dark background */}
+        <View style={styles.mascotRow}>
 
-          {/* Bull card */}
-          <Animated.View style={{ transform: [{ scale: bullScale }], flex: 1 }}>
-            <TouchableOpacity
-              style={[
-                styles.factionCard,
-                { borderColor: selected === 'bull' ? BULL_COLOR : BORDER },
-                selected === 'bull' && { backgroundColor: `${BULL_COLOR}10` },
-              ]}
-              onPress={() => handleSelect('bull')}
-              activeOpacity={0.85}
-            >
+          {/* Bull */}
+          <TouchableOpacity style={styles.side} onPress={() => handleSelect('bull')} activeOpacity={0.85}>
+            <Animated.View style={{ transform: [{ scale: bullScale }], alignItems: 'center' }}>
               <Image source={BUCK.faction} style={styles.mascotImg} resizeMode="contain" />
-              <Text style={[styles.factionName, { color: BULL_COLOR }]}>The Bulls</Text>
-              <Text style={styles.factionDesc}>Optimists.{'\n'}Growth mindset.</Text>
-              {selected === 'bull' && (
-                <View style={[styles.selectedBadge, { backgroundColor: BULL_COLOR }]}>
-                  <Text style={styles.selectedBadgeText}>✓</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
+            </Animated.View>
+            <View style={[
+              styles.nameTag,
+              selected === 'bull' && { backgroundColor: `${BULL_COLOR}20`, borderColor: BULL_COLOR },
+            ]}>
+              <Text style={[styles.factionName, selected === 'bull' && { color: BULL_COLOR }]}>
+                The Bulls
+              </Text>
+              <Text style={styles.factionXP}>{BULL_XP.toLocaleString()} XP</Text>
+            </View>
+            {selected === 'bull' && (
+              <View style={[styles.checkBadge, { backgroundColor: BULL_COLOR }]}>
+                <Text style={styles.checkText}>✓</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
-          {/* Bear card */}
-          <Animated.View style={{ transform: [{ scale: bearScale }], flex: 1 }}>
-            <TouchableOpacity
-              style={[
-                styles.factionCard,
-                { borderColor: selected === 'bear' ? BEAR_COLOR : BORDER },
-                selected === 'bear' && { backgroundColor: `${BEAR_COLOR}10` },
-              ]}
-              onPress={() => handleSelect('bear')}
-              activeOpacity={0.85}
-            >
+          {/* VS divider */}
+          <View style={styles.vsDivider}>
+            <Text style={styles.vs}>VS</Text>
+          </View>
+
+          {/* Bear */}
+          <TouchableOpacity style={styles.side} onPress={() => handleSelect('bear')} activeOpacity={0.85}>
+            <Animated.View style={{ transform: [{ scale: bearScale }], alignItems: 'center' }}>
               <Image source={GRIZ.faction} style={styles.mascotImg} resizeMode="contain" />
-              <Text style={[styles.factionName, { color: BEAR_COLOR }]}>The Bears</Text>
-              <Text style={styles.factionDesc}>Realists.{'\n'}Risk-aware.</Text>
-              {selected === 'bear' && (
-                <View style={[styles.selectedBadge, { backgroundColor: BEAR_COLOR }]}>
-                  <Text style={styles.selectedBadgeText}>✓</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
+            </Animated.View>
+            <View style={[
+              styles.nameTag,
+              selected === 'bear' && { backgroundColor: `${BEAR_COLOR}20`, borderColor: BEAR_COLOR },
+            ]}>
+              <Text style={[styles.factionName, selected === 'bear' && { color: BEAR_COLOR }]}>
+                The Bears
+              </Text>
+              <Text style={styles.factionXP}>{BEAR_XP.toLocaleString()} XP</Text>
+            </View>
+            {selected === 'bear' && (
+              <View style={[styles.checkBadge, { backgroundColor: BEAR_COLOR }]}>
+                <Text style={styles.checkText}>✓</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
+        </View>
+
+        {/* Description pills */}
+        <View style={styles.pills}>
+          <View style={[styles.pill, { borderColor: selected === 'bull' ? BULL_COLOR : BORDER }]}>
+            <Text style={[styles.pillText, selected === 'bull' && { color: BULL_COLOR }]}>
+              Optimists. Growth mindset.
+            </Text>
+          </View>
+          <View style={[styles.pill, { borderColor: selected === 'bear' ? BEAR_COLOR : BORDER }]}>
+            <Text style={[styles.pillText, selected === 'bear' && { color: BEAR_COLOR }]}>
+              Realists. Risk-aware.
+            </Text>
+          </View>
         </View>
 
         {/* CTA */}
         <TouchableOpacity
-          style={[styles.joinBtn, !selected && styles.joinBtnOff, selected && { backgroundColor: color }]}
+          style={[styles.joinBtn, { backgroundColor: btnColor }]}
           onPress={handleJoin}
           activeOpacity={0.85}
           disabled={!selected}
@@ -145,8 +161,6 @@ export default function FactionScreen({ userName, onComplete }: Props) {
           </Text>
         </TouchableOpacity>
 
-        <Text style={styles.switchNote}>You can switch factions once per month.</Text>
-
       </Animated.View>
     </SafeAreaView>
   );
@@ -154,44 +168,62 @@ export default function FactionScreen({ userName, onComplete }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  inner: { flex: 1, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24, gap: 20 },
+  inner: {
+    flex: 1, paddingHorizontal: 20,
+    paddingTop: 16, paddingBottom: 28, gap: 16,
+  },
 
-  header: { gap: 8 },
-  title: { color: TEXT, fontSize: 30, fontWeight: '900', letterSpacing: -0.6 },
-  subtitle: { color: MUTED, fontSize: 14, lineHeight: 21 },
+  header: { gap: 6 },
+  title:    { color: TEXT,  fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
+  subtitle: { color: MUTED, fontSize: 13, lineHeight: 20 },
 
   ratioWrap: { gap: 6 },
   ratioBar: {
-    height: 8, backgroundColor: `${BEAR_COLOR}30`,
+    flexDirection: 'row', height: 8,
     borderRadius: 99, overflow: 'hidden',
   },
-  ratioFill: { height: '100%', borderRadius: 99 },
-  ratioLabels: { flexDirection: 'row', justifyContent: 'space-between' },
-  ratioLabel: { fontSize: 12, fontWeight: '700' },
-  ratioHint: { color: MUTED, fontSize: 11, textAlign: 'center' },
+  ratioFillBull: { backgroundColor: BULL_COLOR },
+  ratioFillBear: { backgroundColor: BEAR_COLOR },
+  ratioLabels: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  ratioLabel:  { fontSize: 12, fontWeight: '700' },
+  ratioCenter: { color: MUTED, fontSize: 11 },
 
-  cards: { flexDirection: 'row', gap: 12, flex: 1 },
-  factionCard: {
-    flex: 1, backgroundColor: SURFACE, borderRadius: 20,
-    borderWidth: 2, alignItems: 'center',
-    justifyContent: 'center', padding: 16, gap: 8,
-    position: 'relative',
+  mascotRow: {
+    flex: 1, flexDirection: 'row',
+    alignItems: 'center', justifyContent: 'space-between',
   },
-  mascotImg: { width: '100%', height: 130 },
-  factionName: { fontSize: 16, fontWeight: '900', letterSpacing: -0.3 },
-  factionDesc: { color: MUTED, fontSize: 12, textAlign: 'center', lineHeight: 17 },
-  selectedBadge: {
-    position: 'absolute', top: 10, right: 10,
-    width: 24, height: 24, borderRadius: 12,
+  side: { flex: 1, alignItems: 'center', gap: 10, position: 'relative' },
+  mascotImg: { width: '100%', height: 160 },
+
+  nameTag: {
+    alignItems: 'center', gap: 2, paddingHorizontal: 14,
+    paddingVertical: 8, borderRadius: 14,
+    borderWidth: 1.5, borderColor: BORDER,
+    backgroundColor: '#161616',
+  },
+  factionName: { color: TEXT, fontSize: 14, fontWeight: '800' },
+  factionXP:   { color: MUTED, fontSize: 11 },
+
+  checkBadge: {
+    position: 'absolute', top: 0, right: 8,
+    width: 26, height: 26, borderRadius: 13,
     alignItems: 'center', justifyContent: 'center',
   },
-  selectedBadgeText: { color: '#000', fontSize: 12, fontWeight: '900' },
+  checkText: { color: '#000', fontSize: 13, fontWeight: '900' },
+
+  vsDivider: { paddingHorizontal: 8, alignItems: 'center' },
+  vs: { color: '#333', fontSize: 20, fontWeight: '900' },
+
+  pills: { flexDirection: 'row', gap: 8 },
+  pill: {
+    flex: 1, borderRadius: 10, paddingVertical: 8,
+    paddingHorizontal: 10, borderWidth: 1,
+    backgroundColor: '#111', alignItems: 'center',
+  },
+  pillText: { color: MUTED, fontSize: 12, textAlign: 'center' },
 
   joinBtn: {
     borderRadius: 16, paddingVertical: 18, alignItems: 'center',
   },
-  joinBtnOff: { backgroundColor: SURFACE },
   joinBtnText: { color: '#000', fontSize: 16, fontWeight: '900' },
-
-  switchNote: { color: MUTED, fontSize: 11, textAlign: 'center' },
 });

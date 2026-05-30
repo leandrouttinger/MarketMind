@@ -41,6 +41,7 @@ export async function loadState(): Promise<SavedState | null> {
   const m = Object.fromEntries(pairs.map(([k, v]) => [k, v]));
 
   if (m[K.ONBOARDING_DONE] !== 'true') return null;
+  if (!m[K.FACTION]) return null; // Faction not chosen yet → restart flow
 
   const lastPlayedRaw = m[K.LAST_PLAYED_DATE] || null;
   let quizDoneToday = m[K.QUIZ_DONE_TODAY] === 'true';

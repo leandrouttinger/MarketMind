@@ -98,8 +98,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   inner: { flex: 1, paddingHorizontal: 24, justifyContent: 'center', gap: 28 },
 
-  mascotWrap: { alignItems: 'center', gap: 12 },
-  mascot: { width: 130, height: 130 },
+  mascotWrap: { alignItems: 'center', gap: 8 },
+  mascot: { width: 150, height: 150 },
   title:    { color: TEXT,  fontSize: 26, fontWeight: '800', letterSpacing: -0.4 },
   subtitle: { color: MUTED, fontSize: 14 },
 
