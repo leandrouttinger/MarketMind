@@ -35,12 +35,8 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: 'profile', label: 'Profile', icon: '◯' },
 ];
 
-const STREAK_MILESTONES: Record<number, { msg: string; emoji: string }> = {
-  3:  { msg: "3 days in a row! Great start.", emoji: "💪" },
-  7:  { msg: "1 week! You're building a real habit.", emoji: "🔥" },
-  14: { msg: "2 weeks strong! You're on your way.", emoji: "⚡" },
-  21: { msg: "3 weeks! Consistency is everything.", emoji: "📈" },
-  30: { msg: "1 month! You're a legend. Keep going.", emoji: "👑" },
+const STREAK_MILESTONE_KEYS: Record<number, string> = {
+  3: 'milestone3', 7: 'milestone7', 14: 'milestone14', 21: 'milestone21', 30: 'milestone30',
 };
 
 function isSameDay(d1: Date, d2: Date) {
@@ -98,7 +94,7 @@ export default function MainTabs({
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(
     new Set(initialCompleted)
   );
-  const [milestoneModal, setMilestoneModal] = useState<{ msg: string; emoji: string } | null>(null);
+  const [milestoneModal, setMilestoneModal] = useState<{ msgKey: string } | null>(null);
 
   const insets = useSafeAreaInsets();
   const tabScales = useRef(TABS.map(() => new Animated.Value(1))).current;
@@ -199,9 +195,9 @@ export default function MainTabs({
         totalQuestions: newTotal,
       });
 
-      const milestone = STREAK_MILESTONES[newStreak];
-      if (milestone) {
-        setTimeout(() => setMilestoneModal(milestone), 400);
+      const milestoneKey = STREAK_MILESTONE_KEYS[newStreak];
+      if (milestoneKey) {
+        setTimeout(() => setMilestoneModal({ msgKey: milestoneKey }), 400);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } else if (quizMode === 'lesson' && lessonCtx) {
@@ -256,7 +252,7 @@ export default function MainTabs({
           onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setLeagueOpen(false); }}
           activeOpacity={0.8}
         >
-          <Text style={styles.backBtnText}>← Zurück</Text>
+          <Text style={styles.backBtnText}>{t('back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -271,7 +267,7 @@ export default function MainTabs({
           onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setAiChatOpen(false); }}
           activeOpacity={0.8}
         >
-          <Text style={styles.backBtnText}>← Zurück</Text>
+          <Text style={styles.backBtnText}>{t('back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -297,7 +293,7 @@ export default function MainTabs({
               activeOpacity={0.85}
             >
               <Text style={styles.ligaBtnIcon}>◉</Text>
-              <Text style={styles.ligaBtnText}>Liga</Text>
+              <Text style={styles.ligaBtnText}>{t('liga')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -335,14 +331,14 @@ export default function MainTabs({
         <View style={modal.backdrop}>
           <Animated.View style={[modal.card, { transform: [{ scale: milestoneScale }] }]}>
             <MascotVideo video={SHARED_VID.flameEmerald} fallback={ICONS.flameEmerald} size={80} bgColor="#111" />
-            <Text style={modal.streakNum}>{currentStreak} Day Streak!</Text>
-            <Text style={modal.msg}>{milestoneModal?.msg}</Text>
+            <Text style={modal.streakNum}>{currentStreak} {t('dayStreak')}!</Text>
+            <Text style={modal.msg}>{milestoneModal ? t(milestoneModal.msgKey) : ''}</Text>
             <TouchableOpacity
               style={modal.btn}
               onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); setMilestoneModal(null); }}
               activeOpacity={0.85}
             >
-              <Text style={modal.btnText}>Keep going! →</Text>
+              <Text style={modal.btnText}>{t('keepGoing')}</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>

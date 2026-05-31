@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BRAND   = '#10B981';
 const BG      = '#0F0F0F';
@@ -75,6 +76,7 @@ const DUMMY_BRIEFING: BriefItem[] = [
 const FILTER_CURRENCIES = ['All', 'USD', 'EUR', 'GBP', 'CHF', 'JPY'];
 
 export default function MarketsScreen() {
+  const { t } = useLanguage();
   const [subTab, setSubTab] = useState<SubTab>('calendar');
   const [currencyFilter, setCurrencyFilter] = useState('All');
 
@@ -115,7 +117,7 @@ export default function MarketsScreen() {
             activeOpacity={0.8}
           >
             <Text style={[styles.subTabText, subTab === tab && styles.subTabTextActive]}>
-              {tab === 'calendar' ? 'Economic Calendar' : 'AI Briefing'}
+              {tab === 'calendar' ? t('economicCalendar') : t('aiBriefing')}
             </Text>
           </TouchableOpacity>
         ))}
@@ -133,15 +135,15 @@ export default function MarketsScreen() {
             <View style={styles.legend}>
               <View style={styles.legendItem}>
                 <View style={[styles.dot, { backgroundColor: RED }]} />
-                <Text style={styles.legendText}>High Impact</Text>
+                <Text style={styles.legendText}>{t('highImpact')}</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.dot, { backgroundColor: ORANGE }]} />
-                <Text style={styles.legendText}>Medium</Text>
+                <Text style={styles.legendText}>{t('impactMedium')}</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.dot, { backgroundColor: YELLOW }]} />
-                <Text style={styles.legendText}>Low</Text>
+                <Text style={styles.legendText}>{t('impactLow')}</Text>
               </View>
             </View>
 
@@ -159,7 +161,7 @@ export default function MarketsScreen() {
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.filterChipText, currencyFilter === cur && styles.filterChipTextActive]}>
-                    {cur}
+                    {cur === 'All' ? t('allFilter') : cur}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -189,9 +191,9 @@ export default function MarketsScreen() {
                 <View style={styles.eventRight}>
                   <Text style={styles.eventTitle}>{ev.title}</Text>
                   <View style={styles.eventMeta}>
-                    <Text style={styles.eventMetaText}>Forecast: {ev.forecast}</Text>
+                    <Text style={styles.eventMetaText}>{t('forecastLabel')}: {ev.forecast}</Text>
                     <Text style={styles.metaDot}>·</Text>
-                    <Text style={styles.eventMetaText}>Prev: {ev.prev}</Text>
+                    <Text style={styles.eventMetaText}>{t('prevLabel')}: {ev.prev}</Text>
                   </View>
                 </View>
               </View>
@@ -201,13 +203,11 @@ export default function MarketsScreen() {
             <View style={styles.noticeCard}>
               <Text style={styles.noticeIcon}>◎</Text>
               <View style={styles.noticeRight}>
-                <Text style={styles.noticeTitle}>Push Notifications</Text>
-                <Text style={styles.noticeSub}>
-                  Bekomme eine Warnung vor High-Impact Events — z. B. "In 20 Min: US CPI. Kein Trade jetzt."
-                </Text>
+                <Text style={styles.noticeTitle}>{t('pushNotificationsTitle')}</Text>
+                <Text style={styles.noticeSub}>{t('pushNotificationsDesc')}</Text>
               </View>
               <View style={styles.comingSoonBadge}>
-                <Text style={styles.comingSoonText}>Bald</Text>
+                <Text style={styles.comingSoonText}>{t('comingSoonBadge')}</Text>
               </View>
             </View>
           </>
@@ -219,12 +219,10 @@ export default function MarketsScreen() {
             {/* Briefing Header */}
             <View style={styles.briefingHeader}>
               <View style={styles.aiBadge}>
-                <Text style={styles.aiBadgeText}>AI AGENTS</Text>
+                <Text style={styles.aiBadgeText}>{t('aiAgentsLabel')}</Text>
               </View>
-              <Text style={styles.briefingTitle}>Tägliches Markt-Briefing</Text>
-              <Text style={styles.briefingSub}>
-                KI-Agenten analysieren täglich Marktdaten aus seriösen Quellen und fassen zusammen, was für Trader wichtig ist.
-              </Text>
+              <Text style={styles.briefingTitle}>{t('dailyBriefingTitle')}</Text>
+              <Text style={styles.briefingSub}>{t('briefingDesc')}</Text>
             </View>
 
             {/* Briefing Items */}
@@ -245,13 +243,9 @@ export default function MarketsScreen() {
 
             {/* Ask Card */}
             <View style={styles.askCard}>
-              <Text style={styles.askTitle}>Frag den Markt-Agenten</Text>
+              <Text style={styles.askTitle}>{t('askMarketAgent')}</Text>
               <View style={styles.askExamples}>
-                {[
-                  '"Was würdest du mit 10\'000 CHF jetzt machen?"',
-                  '"Welche Währungspaare laufen diese Woche?"',
-                  '"Ist jetzt ein guter Zeitpunkt für Gold?"',
-                ].map((q, i) => (
+                {[t('marketExample1'), t('marketExample2'), t('marketExample3')].map((q, i) => (
                   <View key={i} style={styles.askExampleRow}>
                     <Text style={styles.askExampleArrow}>›</Text>
                     <Text style={styles.askExampleText}>{q}</Text>
@@ -259,13 +253,13 @@ export default function MarketsScreen() {
                 ))}
               </View>
               <TouchableOpacity style={styles.askBtn} activeOpacity={0.85}>
-                <Text style={styles.askBtnText}>AI Advisor öffnen →</Text>
+                <Text style={styles.askBtnText}>{t('openAIAdvisor')}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Sources info */}
             <View style={styles.sourcesCard}>
-              <Text style={styles.sourcesTitle}>Quellen der KI-Agenten</Text>
+              <Text style={styles.sourcesTitle}>{t('aiAgentSources')}</Text>
               <View style={styles.sourcesList}>
                 {['Reuters', 'Bloomberg', 'FX Street', 'Investing.com', 'ForexFactory'].map(s => (
                   <View key={s} style={styles.sourceChip}>
@@ -273,9 +267,7 @@ export default function MarketsScreen() {
                   </View>
                 ))}
               </View>
-              <Text style={styles.sourcesNote}>
-                Alle Inhalte kommen von externen Quellen. MarketMind übernimmt keine Haftung.
-              </Text>
+              <Text style={styles.sourcesNote}>{t('sourcesDisclaimer')}</Text>
             </View>
           </>
         )}

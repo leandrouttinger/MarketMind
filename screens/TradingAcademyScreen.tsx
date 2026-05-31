@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BRAND  = '#10B981';
 const BG     = '#0F0F0F';
@@ -32,92 +33,72 @@ interface Section {
   lessons: Lesson[];
 }
 
-const SECTIONS: Section[] = [
+// Section definitions use translation keys — resolved in component
+const SECTION_DEFS = [
   {
-    id: 'basics',
-    icon: '◈',
-    color: BRAND,
-    title: 'Grundlagen',
-    subtitle: 'Kerzen, Trends, Support & Resistance',
+    id: 'basics', icon: '◈', color: BRAND, free: true, isCalculator: false,
+    titleKey: 'sectionBasicsTitle', subtitleKey: 'sectionBasicsSubtitle',
     lessonCount: 8,
-    free: true,
     lessons: [
-      { id: 'candles',     title: 'Was ist eine Kerze?',        duration: '5 min', free: true  },
-      { id: 'candletypes', title: 'Kerzen-Typen & Bedeutung',   duration: '6 min', free: false },
-      { id: 'trends',      title: 'Trends erkennen',            duration: '7 min', free: false },
-      { id: 'sr',          title: 'Support & Resistance',       duration: '8 min', free: false },
-      { id: 'timeframes',  title: 'Timeframes verstehen',       duration: '6 min', free: false },
-      { id: 'volume',      title: 'Volumen lesen',              duration: '5 min', free: false },
-      { id: 'structure',   title: 'Marktstruktur Basics',       duration: '8 min', free: false },
-      { id: 'firsttrade',  title: 'Dein erster Paper-Trade',    duration: '10 min', free: false },
+      { id: 'candles',     titleKey: 'lessonCandles',     duration: '5 min',  free: true  },
+      { id: 'candletypes', titleKey: 'lessonCandleTypes', duration: '6 min',  free: false },
+      { id: 'trends',      titleKey: 'lessonTrends',      duration: '7 min',  free: false },
+      { id: 'sr',          titleKey: 'lessonSR',          duration: '8 min',  free: false },
+      { id: 'timeframes',  titleKey: 'lessonTimeframes',  duration: '6 min',  free: false },
+      { id: 'volume',      titleKey: 'lessonVolume',      duration: '5 min',  free: false },
+      { id: 'structure',   titleKey: 'lessonStructure',   duration: '8 min',  free: false },
+      { id: 'firsttrade',  titleKey: 'lessonFirstTrade',  duration: '10 min', free: false },
     ],
   },
   {
-    id: 'strategy',
-    icon: '⬡',
-    color: '#6366F1',
-    title: 'Meine Strategie (ICT / SMC)',
-    subtitle: 'Market Structure, Order Blocks, FVG, Entries',
+    id: 'strategy', icon: '⬡', color: '#6366F1', free: false, isCalculator: false,
+    titleKey: 'sectionStrategyTitle', subtitleKey: 'sectionStrategySubtitle',
     lessonCount: 12,
-    free: false,
     lessons: [
-      { id: 'msb',   title: 'Market Structure Break',    duration: '8 min',  free: false },
-      { id: 'ob',    title: 'Order Blocks erkennen',     duration: '10 min', free: false },
-      { id: 'fvg',   title: 'Fair Value Gaps (FVG)',     duration: '9 min',  free: false },
-      { id: 'bos',   title: 'Break of Structure (BOS)',  duration: '7 min',  free: false },
-      { id: 'entry', title: 'Entry-Präzision & Timing',  duration: '12 min', free: false },
-      { id: 'sl',    title: 'Stop Loss richtig setzen',  duration: '8 min',  free: false },
-      { id: 'tp',    title: 'Take Profit Strategie',     duration: '7 min',  free: false },
-      { id: 'live',  title: 'Live-Trade Walkthrough',    duration: '15 min', free: false },
+      { id: 'msb',   titleKey: 'lessonMSB',   duration: '8 min',  free: false },
+      { id: 'ob',    titleKey: 'lessonOB',    duration: '10 min', free: false },
+      { id: 'fvg',   titleKey: 'lessonFVG',   duration: '9 min',  free: false },
+      { id: 'bos',   titleKey: 'lessonBOS',   duration: '7 min',  free: false },
+      { id: 'entry', titleKey: 'lessonEntry', duration: '12 min', free: false },
+      { id: 'sl',    titleKey: 'lessonSL',    duration: '8 min',  free: false },
+      { id: 'tp',    titleKey: 'lessonTP',    duration: '7 min',  free: false },
+      { id: 'live',  titleKey: 'lessonLive',  duration: '15 min', free: false },
     ],
   },
   {
-    id: 'psychology',
-    icon: '◎',
-    color: '#EC4899',
-    title: 'Trading Psychologie',
-    subtitle: 'Disziplin, Mindset, Journaling, Fehler vermeiden',
+    id: 'psychology', icon: '◎', color: '#EC4899', free: false, isCalculator: false,
+    titleKey: 'sectionPsychologyTitle', subtitleKey: 'sectionPsychologySubtitle',
     lessonCount: 6,
-    free: false,
     lessons: [
-      { id: 'fear',      title: 'Angst & Gier kontrollieren', duration: '8 min', free: false },
-      { id: 'journal',   title: 'Journaling wie ein Pro',     duration: '6 min', free: false },
-      { id: 'rules',     title: 'Deine Regelsets bauen',      duration: '7 min', free: false },
-      { id: 'revenge',   title: 'Revenge Trading vermeiden',  duration: '5 min', free: false },
-      { id: 'discipline','title': 'Disziplin über Monate',    duration: '9 min', free: false },
-      { id: 'routine',   title: 'Trader-Routine aufbauen',    duration: '8 min', free: false },
+      { id: 'fear',       titleKey: 'lessonFear',       duration: '8 min', free: false },
+      { id: 'journal',    titleKey: 'lessonJournal',    duration: '6 min', free: false },
+      { id: 'rules',      titleKey: 'lessonRules',      duration: '7 min', free: false },
+      { id: 'revenge',    titleKey: 'lessonRevenge',    duration: '5 min', free: false },
+      { id: 'discipline', titleKey: 'lessonDiscipline', duration: '9 min', free: false },
+      { id: 'routine',    titleKey: 'lessonRoutine',    duration: '8 min', free: false },
     ],
   },
   {
-    id: 'calculator',
-    icon: '◧',
-    color: GOLD,
-    title: 'Contract Rechner',
-    subtitle: 'Lot Size berechnen, Risk % eingeben, Positionsgrösse',
-    lessonCount: 0,
-    free: false,
-    isCalculator: true,
-    lessons: [],
+    id: 'calculator', icon: '◧', color: GOLD, free: false, isCalculator: true,
+    titleKey: 'sectionCalculatorTitle', subtitleKey: 'sectionCalculatorSubtitle',
+    lessonCount: 0, lessons: [],
   },
   {
-    id: 'propfirms',
-    icon: '◉',
-    color: '#F97316',
-    title: 'Prop Firms & Skalieren',
-    subtitle: 'Topstep, FTMO — vom Demo zum Funded Trader',
+    id: 'propfirms', icon: '◉', color: '#F97316', free: false, isCalculator: false,
+    titleKey: 'sectionPropFirmsTitle', subtitleKey: 'sectionPropFirmsSubtitle',
     lessonCount: 5,
-    free: false,
     lessons: [
-      { id: 'whatisprop', title: 'Was ist eine Prop Firm?',    duration: '6 min', free: false },
-      { id: 'topstep',    title: 'Topstep Challenge Guide',    duration: '10 min', free: false },
-      { id: 'ftmo',       title: 'FTMO Challenge Guide',       duration: '10 min', free: false },
-      { id: 'rules2',     title: 'Prop-Regeln & Drawdown',     duration: '7 min',  free: false },
-      { id: 'scale',      title: 'Skalieren nach dem ersten Payout', duration: '8 min', free: false },
+      { id: 'whatisprop', titleKey: 'lessonWhatIsProp', duration: '6 min',  free: false },
+      { id: 'topstep',    titleKey: 'lessonTopstep',    duration: '10 min', free: false },
+      { id: 'ftmo',       titleKey: 'lessonFTMO',       duration: '10 min', free: false },
+      { id: 'rules2',     titleKey: 'lessonPropRules',  duration: '7 min',  free: false },
+      { id: 'scale',      titleKey: 'lessonScale',      duration: '8 min',  free: false },
     ],
   },
-];
+] as const;
 
 export default function TradingAcademyScreen() {
+  const { t } = useLanguage();
   const [expanded, setExpanded] = useState<string | null>('basics');
 
   const toggle = async (id: string) => {
@@ -130,8 +111,8 @@ export default function TradingAcademyScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.title}>Trading Academy</Text>
-          <Text style={styles.subtitle}>Von Null zum profitablen Trader</Text>
+          <Text style={styles.title}>{t('tradingAcademy')}</Text>
+          <Text style={styles.subtitle}>{t('tradingAcademySubtitle')}</Text>
         </View>
         <View style={styles.proBadge}>
           <Text style={styles.proBadgeText}>PRO</Text>
@@ -143,8 +124,7 @@ export default function TradingAcademyScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Sections */}
-        {SECTIONS.map(section => {
+        {SECTION_DEFS.map(section => {
           const isOpen = expanded === section.id;
           return (
             <TouchableOpacity
@@ -160,19 +140,19 @@ export default function TradingAcademyScreen() {
                 </View>
                 <View style={styles.cardInfo}>
                   <View style={styles.titleRow}>
-                    <Text style={styles.sectionTitle} numberOfLines={1}>{section.title}</Text>
+                    <Text style={styles.sectionTitle} numberOfLines={1}>{t(section.titleKey)}</Text>
                     {section.free
                       ? <View style={[styles.badge, { backgroundColor: `${BRAND}20`, borderColor: `${BRAND}40` }]}>
-                          <Text style={[styles.badgeText, { color: BRAND }]}>FREE</Text>
+                          <Text style={[styles.badgeText, { color: BRAND }]}>{t('free')}</Text>
                         </View>
                       : <View style={[styles.badge, { backgroundColor: `${GOLD}18`, borderColor: `${GOLD}40` }]}>
                           <Text style={[styles.badgeText, { color: GOLD }]}>PRO</Text>
                         </View>
                     }
                   </View>
-                  <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
+                  <Text style={styles.sectionSubtitle}>{t(section.subtitleKey)}</Text>
                   {!section.isCalculator && (
-                    <Text style={styles.lessonCount}>{section.lessonCount} Lektionen</Text>
+                    <Text style={styles.lessonCount}>{section.lessonCount} {t('lessonCountLabel')}</Text>
                   )}
                 </View>
                 <Text style={[styles.chevron, { color: section.color }]}>{isOpen ? '▲' : '▼'}</Text>
@@ -193,7 +173,7 @@ export default function TradingAcademyScreen() {
                         </Text>
                       </View>
                       <View style={styles.lessonInfo}>
-                        <Text style={[styles.lessonTitle, !lesson.free && { color: MUTED }]}>{lesson.title}</Text>
+                        <Text style={[styles.lessonTitle, !lesson.free && { color: MUTED }]}>{t(lesson.titleKey)}</Text>
                         <Text style={styles.lessonDuration}>{lesson.duration}</Text>
                       </View>
                       <Text style={[styles.lessonArrow, { color: lesson.free ? section.color : BORDER }]}>
@@ -208,12 +188,10 @@ export default function TradingAcademyScreen() {
               {isOpen && section.isCalculator && (
                 <View style={styles.calcPlaceholder}>
                   <Text style={styles.calcIcon}>◧</Text>
-                  <Text style={styles.calcTitle}>Contract Rechner</Text>
-                  <Text style={styles.calcDesc}>
-                    Gib deinen Risk % ein und erhalte sofort die richtige Lot Size für dein Konto.
-                  </Text>
+                  <Text style={styles.calcTitle}>{t('sectionCalculatorTitle')}</Text>
+                  <Text style={styles.calcDesc}>{t('calculatorDesc')}</Text>
                   <View style={styles.calcComingSoon}>
-                    <Text style={styles.calcComingSoonText}>Coming Soon</Text>
+                    <Text style={styles.calcComingSoonText}>{t('comingSoon')}</Text>
                   </View>
                 </View>
               )}
@@ -225,15 +203,13 @@ export default function TradingAcademyScreen() {
         <View style={styles.upgradeCard}>
           <View style={styles.upgradeTop}>
             <Text style={styles.upgradeEmoji}>◈</Text>
-            <Text style={styles.upgradeTitle}>Vollzugang freischalten</Text>
+            <Text style={styles.upgradeTitle}>{t('upgradeFullTitle')}</Text>
           </View>
-          <Text style={styles.upgradeSub}>
-            Alle 31 Lektionen · Contract Rechner · Prop Firm Guide · Meine persönliche ICT/SMC Strategie
-          </Text>
+          <Text style={styles.upgradeSub}>{t('upgradeFullDesc')}</Text>
           <TouchableOpacity style={styles.upgradeBtn} activeOpacity={0.85}>
-            <Text style={styles.upgradeBtnText}>Jetzt upgraden — ab 4 CHF / Monat</Text>
+            <Text style={styles.upgradeBtnText}>{t('upgradeFullBtn')}</Text>
           </TouchableOpacity>
-          <Text style={styles.upgradeNote}>Jederzeit kündbar.</Text>
+          <Text style={styles.upgradeNote}>{t('cancelAnytime')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BRAND   = '#10B981';
 const BG      = '#0F0F0F';
@@ -15,70 +16,37 @@ const GOLD    = '#F59E0B';
 const PURPLE  = '#8B5CF6';
 const CORAL   = '#F97316';
 
-interface Tool {
+interface ToolDef {
   id: string;
   icon: string;
   color: string;
-  title: string;
-  desc: string;
-  features: string[];
-  badge: string;
+  titleKey: string;
+  descKey: string;
+  featureKeys: string[];
+  badgeKey: string;
   badgeColor: string;
-  cta: string;
+  ctaKey: string;
   available: boolean;
 }
 
-const TOOLS: Tool[] = [
+const TOOL_DEFS: ToolDef[] = [
   {
-    id: 'ai',
-    icon: '⬡',
-    color: BRAND,
-    title: 'AI Finance Advisor',
-    desc: 'Frag alles über Märkte, deine Strategie oder Finanzen. Echte KI-Antworten — kein generischer Chatbot.',
-    features: [
-      'Unbegrenzte Fragen',
-      'Markt-Kontext in Echtzeit',
-      'Persönliche Finanzberatung',
-      'Keine Themenlimits',
-    ],
-    badge: 'PRO',
-    badgeColor: GOLD,
-    cta: 'Chat öffnen',
-    available: true,
+    id: 'ai', icon: '⬡', color: BRAND,
+    titleKey: 'aiAdvisorTitle', descKey: 'aiAdvisorDesc',
+    featureKeys: ['featureUnlimitedQ', 'featureRealTime', 'featurePersonal', 'featureNoLimits'],
+    badgeKey: 'proBadge', badgeColor: GOLD, ctaKey: 'openChat', available: true,
   },
   {
-    id: 'budget',
-    icon: '◧',
-    color: PURPLE,
-    title: 'Budget Planer',
-    desc: 'Gib dein Einkommen und Fixkosten ein. Die App berechnet deinen Sparplan und sagt dir, wie du dein Ziel erreichst.',
-    features: [
-      'Einkommen & Ausgaben',
-      'Sparziel setzen',
-      'KI-Spartipps',
-      'Monatsplanung',
-    ],
-    badge: 'Bald',
-    badgeColor: MUTED,
-    cta: 'Budget planen',
-    available: false,
+    id: 'budget', icon: '◧', color: PURPLE,
+    titleKey: 'budgetPlannerTitle', descKey: 'budgetPlannerDesc',
+    featureKeys: ['featureIncomeExpenses', 'featureSavingGoal', 'featureAISavingTips', 'featureMonthly'],
+    badgeKey: 'comingSoonBadge', badgeColor: MUTED, ctaKey: 'budgetPlannerCTA', available: false,
   },
   {
-    id: 'calculator',
-    icon: '◈',
-    color: CORAL,
-    title: 'AI Calculator',
-    desc: 'Sag der KI was du brauchst — z. B. "Erstell mir einen Rechner für meine Hochzeitsplanung" — und erhalte eine schöne, exportierbare Tabelle.',
-    features: [
-      'Beliebige Rechner erstellen',
-      'Ästhetisches Design',
-      'Beispielwerte automatisch',
-      'Als CSV exportierbar',
-    ],
-    badge: 'Bald',
-    badgeColor: MUTED,
-    cta: 'Rechner erstellen',
-    available: false,
+    id: 'calculator', icon: '◈', color: CORAL,
+    titleKey: 'aiCalculatorTitle', descKey: 'aiCalculatorDesc',
+    featureKeys: ['featureCustomCalc', 'featureAesthetic', 'featureAutoValues', 'featureCSV'],
+    badgeKey: 'comingSoonBadge', badgeColor: MUTED, ctaKey: 'createCalcCTA', available: false,
   },
 ];
 
@@ -87,19 +55,19 @@ interface Props {
 }
 
 export default function ToolsScreen({ onOpenAI }: Props) {
-  const handlePress = async (tool: Tool) => {
+  const { t } = useLanguage();
+
+  const handlePress = async (tool: ToolDef) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (tool.id === 'ai') {
-      onOpenAI();
-    }
+    if (tool.id === 'ai') onOpenAI();
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Tools</Text>
-        <Text style={styles.subtitle}>Deine smarten Finanz-Werkzeuge</Text>
+        <Text style={styles.title}>{t('toolsTitle')}</Text>
+        <Text style={styles.subtitle}>{t('toolsSubtitle')}</Text>
       </View>
 
       <ScrollView
@@ -107,7 +75,7 @@ export default function ToolsScreen({ onOpenAI }: Props) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {TOOLS.map(tool => (
+        {TOOL_DEFS.map(tool => (
           <TouchableOpacity
             key={tool.id}
             style={[styles.card, { borderColor: tool.available ? `${tool.color}30` : BORDER }]}
@@ -119,27 +87,23 @@ export default function ToolsScreen({ onOpenAI }: Props) {
               <View style={[styles.iconWrap, { backgroundColor: `${tool.color}18` }]}>
                 <Text style={[styles.icon, { color: tool.color }]}>{tool.icon}</Text>
               </View>
-              <View style={[
-                styles.badge,
-                {
-                  backgroundColor: `${tool.badgeColor}18`,
-                  borderColor: `${tool.badgeColor}40`,
-                },
-              ]}>
-                <Text style={[styles.badgeText, { color: tool.badgeColor }]}>{tool.badge}</Text>
+              <View style={[styles.badge, { backgroundColor: `${tool.badgeColor}18`, borderColor: `${tool.badgeColor}40` }]}>
+                <Text style={[styles.badgeText, { color: tool.badgeColor }]}>
+                  {tool.id === 'ai' ? 'PRO' : t(tool.badgeKey)}
+                </Text>
               </View>
             </View>
 
             {/* Title + Desc */}
-            <Text style={styles.toolTitle}>{tool.title}</Text>
-            <Text style={styles.toolDesc}>{tool.desc}</Text>
+            <Text style={styles.toolTitle}>{t(tool.titleKey)}</Text>
+            <Text style={styles.toolDesc}>{t(tool.descKey)}</Text>
 
             {/* Feature List */}
             <View style={styles.featureList}>
-              {tool.features.map((f, i) => (
+              {tool.featureKeys.map((fk, i) => (
                 <View key={i} style={styles.featureRow}>
                   <Text style={[styles.featureCheck, { color: tool.color }]}>✓</Text>
-                  <Text style={styles.featureText}>{f}</Text>
+                  <Text style={styles.featureText}>{t(fk)}</Text>
                 </View>
               ))}
             </View>
@@ -148,11 +112,11 @@ export default function ToolsScreen({ onOpenAI }: Props) {
             <View style={styles.divider} />
             <View style={styles.ctaRow}>
               <Text style={[styles.ctaText, { color: tool.available ? tool.color : MUTED }]}>
-                {tool.cta} {tool.available ? '→' : ''}
+                {t(tool.ctaKey)} {tool.available ? '→' : ''}
               </Text>
               {!tool.available && (
                 <View style={styles.comingSoonChip}>
-                  <Text style={styles.comingSoonChipText}>Coming Soon</Text>
+                  <Text style={styles.comingSoonChipText}>{t('comingSoon')}</Text>
                 </View>
               )}
             </View>
@@ -163,10 +127,8 @@ export default function ToolsScreen({ onOpenAI }: Props) {
         <View style={styles.infoCard}>
           <Text style={styles.infoIcon}>◎</Text>
           <View style={styles.infoRight}>
-            <Text style={styles.infoTitle}>Mehr Tools kommen</Text>
-            <Text style={styles.infoSub}>
-              Contract Rechner, Portfolio Tracker und mehr — werden laufend hinzugefügt.
-            </Text>
+            <Text style={styles.infoTitle}>{t('moreToolsTitle')}</Text>
+            <Text style={styles.infoSub}>{t('moreToolsDesc')}</Text>
           </View>
         </View>
       </ScrollView>
