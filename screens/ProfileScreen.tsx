@@ -258,10 +258,15 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
               {/* Notifications */}
               <TouchableOpacity
                 style={[styles.settingRow, styles.settingRowBorder]}
-                onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setNotifOn(v => !v); }}
+                onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setNotifOn(v => !v);
+                }}
                 activeOpacity={0.7}
               >
-                <Image source={ICONS.bell} style={styles.settingIconImg} resizeMode="contain" />
+                <View style={styles.settingIconWrap}>
+                  <Image source={ICONS.bell} style={styles.settingIconImg} resizeMode="contain" />
+                </View>
                 <Text style={styles.settingLabel}>{t('dailyReminders')}</Text>
                 <View style={[styles.toggle, notifOn && styles.toggleOn]}>
                   <View style={[styles.toggleThumb, notifOn && styles.toggleThumbOn]} />
@@ -274,7 +279,9 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
                 onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowLangPicker(v => !v); }}
                 activeOpacity={0.7}
               >
-                <Image source={currentLang.flagImg} style={styles.settingIconImg} resizeMode="contain" />
+                <View style={styles.settingIconWrap}>
+                  <Image source={currentLang.flagImg} style={styles.settingIconImg} resizeMode="cover" />
+                </View>
                 <Text style={styles.settingLabel}>{t('language')}</Text>
                 <Text style={styles.settingValue}>{currentLang.label} {showLangPicker ? '▲' : '▼'}</Text>
               </TouchableOpacity>
@@ -303,7 +310,9 @@ export default function ProfileScreen({ userName, level, xp, streak, totalQuesti
                 onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowDiffPicker(v => !v); }}
                 activeOpacity={0.7}
               >
-                <Image source={currentDiffIcon} style={styles.settingIconImg} resizeMode="contain" />
+                <View style={styles.settingIconWrap}>
+                  <Image source={currentDiffIcon} style={styles.settingIconImg} resizeMode="contain" />
+                </View>
                 <Text style={styles.settingLabel}>{t('difficulty')}</Text>
                 <Text style={styles.settingValue}>{currentDiff.label} {showDiffPicker ? '▲' : '▼'}</Text>
               </TouchableOpacity>
@@ -430,6 +439,11 @@ const styles = StyleSheet.create({
   },
   settingRowBorder: { borderBottomWidth: 1, borderBottomColor: BORDER },
   settingIcon: { fontSize: 18, width: 26 },
+  settingIconWrap: {
+    width: 34, height: 34, borderRadius: 8,
+    backgroundColor: '#2C2C2E', overflow: 'hidden',
+    alignItems: 'center', justifyContent: 'center',
+  },
   settingIconImg: { width: 28, height: 28 },
   accountIcon: { width: 40, height: 40 },
   pickerDiffImg: { width: 36, height: 36 },

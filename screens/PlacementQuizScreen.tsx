@@ -77,12 +77,13 @@ const QUESTIONS = [
   },
 ];
 
-// ── Mascot placeholder ────────────────────────────────────────────────────────
-import { BUCK as BUCK_IMGS, BUCK_VID } from '../utils/imageAssets';
+import { getMascotVid, getMascotImg } from '../utils/imageAssets';
 import MascotVideo from '../components/MascotVideo';
+import { Faction } from './FactionScreen';
 
 interface Props {
   userName: string;
+  faction: Faction;
   onComplete: (level: UserLevel) => void;
 }
 
@@ -92,7 +93,7 @@ function shuffleOptions(options: typeof QUESTIONS[0]['options']) {
   return [...options].sort(() => Math.random() - 0.5);
 }
 
-export default function PlacementQuizScreen({ userName, onComplete }: Props) {
+export default function PlacementQuizScreen({ userName, faction, onComplete }: Props) {
   const { t } = useLanguage();
   const [started, setStarted] = useState(false);
   const [index, setIndex] = useState(0);
@@ -149,7 +150,7 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
     return (
       <SafeAreaView style={styles.container}>
         <Animated.View style={[styles.introWrap, { opacity: fadeIn }]}>
-          <MascotVideo video={BUCK_VID.idle} fallback={BUCK_IMGS.default} size={200} />
+          <MascotVideo video={getMascotVid(faction, 'idle')} fallback={getMascotImg(faction, 'default')} size={200} bgColor="#0F0F0F" />
 
           <View style={styles.introTextBlock}>
             <Text style={styles.introReady}>
@@ -186,7 +187,7 @@ export default function PlacementQuizScreen({ userName, onComplete }: Props) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.resultWrap}>
-          <MascotVideo video={BUCK_VID.levelUp} fallback={BUCK_IMGS.levelUp} size={160} loop={false} />
+          <MascotVideo video={getMascotVid(faction, 'levelUp')} fallback={getMascotImg(faction, 'levelUp')} size={160} loop={false} bgColor="#0F0F0F" />
           <Text style={styles.resultScore}>{t('resultCorrect').replace('{score}', String(score)).replace('{total}', String(QUESTIONS.length))}</Text>
           <Text style={[styles.resultLevel, { color: level.color }]}>{level.label}</Text>
           <Text style={styles.resultDesc}>{level.desc}</Text>

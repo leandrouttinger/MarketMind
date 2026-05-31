@@ -33,6 +33,9 @@
         "projectId": "e9eff867-9de1-4c2f-8ac3-9a33fb646d64"
       }
     },
-    "owner": "lele1973"
+    "owner": "lele1973",
+    "plugins": [
+      "expo-video"
+    ]
   }
 }

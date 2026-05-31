@@ -3,16 +3,20 @@ import { View, Text, TouchableOpacity, StyleSheet, Animated, Modal, Image } from
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import LearningPathScreen from './LearningPathScreen';
+import LessonScreen from './LessonScreen';
 import LeagueScreen from './LeagueScreen';
 import AIChatScreen from './AIChatScreen';
 import ProfileScreen from './ProfileScreen';
 import QuizScreen from './QuizScreen';
-import NewsScreen from './NewsScreen';
+import TradingAcademyScreen from './TradingAcademyScreen';
+import MarketsScreen from './MarketsScreen';
+import ToolsScreen from './ToolsScreen';
 import { useLanguage } from '../contexts/LanguageContext';
 import { UserLevel, getDailyChallenge } from '../utils/questionPicker';
 import { LessonDef, SectionDef } from '../data/learningPath';
 import { getXPForAction } from '../utils/xpSystem';
-import { IMAGES } from '../utils/imageAssets';
+import { IMAGES, SHARED_VID, ICONS } from '../utils/imageAssets';
+import MascotVideo from '../components/MascotVideo';
 import { saveState } from '../utils/storage';
 import { getCurrentUser, upsertProfile } from '../utils/supabase';
 import { Faction } from './FactionScreen';
@@ -22,13 +26,13 @@ const BG = '#0F0F0F';
 const TAB_BG = '#0A0A0A';
 const MUTED = '#3A3A3C';
 
-type Tab = 'learn' | 'league' | 'news' | 'ai' | 'profile';
-const TABS: { key: Tab; labelKey: string; icon: string }[] = [
-  { key: 'learn',   labelKey: 'learn',   icon: '◈' },
-  { key: 'league',  labelKey: 'league',  icon: '◉' },
-  { key: 'news',    labelKey: 'News',    icon: '◪' },
-  { key: 'ai',      labelKey: 'ai',      icon: '⬡' },
-  { key: 'profile', labelKey: 'profile', icon: '◯' },
+type Tab = 'learn' | 'trading' | 'markets' | 'tools' | 'profile';
+const TABS: { key: Tab; label: string; icon: string }[] = [
+  { key: 'learn',   label: 'Learn',   icon: '◈' },
+  { key: 'trading', label: 'Trading', icon: '▲' },
+  { key: 'markets', label: 'Markets', icon: '◎' },
+  { key: 'tools',   label: 'Tools',   icon: '◧' },
+  { key: 'profile', label: 'Profile', icon: '◯' },
 ];
 
 const STREAK_MILESTONES: Record<number, { msg: string; emoji: string }> = {
@@ -78,8 +82,11 @@ export default function MainTabs({
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<Tab>('learn');
   const [quizOpen, setQuizOpen] = useState(false);
+  const [lessonOpen, setLessonOpen] = useState(false);
   const [quizMode, setQuizMode] = useState<'daily' | 'lesson'>('daily');
   const [lessonCtx, setLessonCtx] = useState<{ lesson: LessonDef; section: SectionDef } | null>(null);
+  const [leagueOpen, setLeagueOpen] = useState(false);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
 
   const [quizDoneToday, setQuizDoneToday] = useState(initialQuizDone);
   const [lastPlayedDate, setLastPlayedDate] = useState<Date | null>(
@@ -151,7 +158,7 @@ export default function MainTabs({
   const handleStartLesson = (lesson: LessonDef, section: SectionDef) => {
     setQuizMode('lesson');
     setLessonCtx({ lesson, section });
-    setQuizOpen(true);
+    setLessonOpen(true); // Show lesson cards first, then quiz
   };
 
   const handleQuizComplete = (score: number, total: number) => {
@@ -212,16 +219,61 @@ export default function MainTabs({
     setLessonCtx(null);
   };
 
+  // ── Full-screen overlays (rendered instead of tab UI) ──────────────────────
+
+  if (lessonOpen && lessonCtx) {
+    return (
+      <LessonScreen
+        lesson={lessonCtx.lesson}
+        section={lessonCtx.section}
+        faction={faction}
+        onStartQuiz={() => { setLessonOpen(false); setQuizOpen(true); }}
+        onExit={() => { setLessonOpen(false); setLessonCtx(null); }}
+      />
+    );
+  }
+
   if (quizOpen) {
     return (
       <QuizScreen
         level={userLevel}
         goals={quizMode === 'daily' ? [] : userGoals}
         streak={currentStreak}
+        faction={faction}
         isDailyChallenge={quizMode === 'daily'}
         onComplete={handleQuizComplete}
         onExit={() => { setQuizOpen(false); setLessonCtx(null); }}
       />
+    );
+  }
+
+  if (leagueOpen) {
+    return (
+      <View style={{ flex: 1 }}>
+        <LeagueScreen userName={userName} userXP={currentXP} streak={currentStreak} faction={faction} />
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setLeagueOpen(false); }}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.backBtnText}>← Zurück</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (aiChatOpen) {
+    return (
+      <View style={{ flex: 1 }}>
+        <AIChatScreen />
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setAiChatOpen(false); }}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.backBtnText}>← Zurück</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 
@@ -231,16 +283,27 @@ export default function MainTabs({
     <View style={styles.container}>
       <View style={[styles.screen, { paddingBottom: tabH }]}>
         {activeTab === 'learn' && (
-          <LearningPathScreen
-            userName={userName} level={userLevel} xp={currentXP} streak={currentStreak}
-            completedLessons={completedLessons} quizDoneToday={quizDoneToday}
-            isPremium={false} onStartLesson={handleStartLesson}
-            onStartDailyChallenge={handleDailyChallenge}
-          />
+          <View style={{ flex: 1 }}>
+            <LearningPathScreen
+              userName={userName} level={userLevel} xp={currentXP} streak={currentStreak}
+              completedLessons={completedLessons} quizDoneToday={quizDoneToday}
+              isPremium={true} onStartLesson={handleStartLesson}
+              onStartDailyChallenge={handleDailyChallenge}
+            />
+            {/* Liga floating button */}
+            <TouchableOpacity
+              style={styles.ligaBtn}
+              onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setLeagueOpen(true); }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.ligaBtnIcon}>◉</Text>
+              <Text style={styles.ligaBtnText}>Liga</Text>
+            </TouchableOpacity>
+          </View>
         )}
-        {activeTab === 'league' && <LeagueScreen userName={userName} userXP={currentXP} streak={currentStreak} faction={faction} />}
-        {activeTab === 'news' && <NewsScreen />}
-        {activeTab === 'ai' && <AIChatScreen />}
+        {activeTab === 'trading' && <TradingAcademyScreen />}
+        {activeTab === 'markets' && <MarketsScreen />}
+        {activeTab === 'tools' && <ToolsScreen onOpenAI={() => setAiChatOpen(true)} />}
         {activeTab === 'profile' && (
           <ProfileScreen
             userName={userName} level={userLevel} xp={currentXP}
@@ -260,7 +323,7 @@ export default function MainTabs({
                 <Text style={[styles.tabIcon, active && styles.tabIconActive]}>{tab.icon}</Text>
               </Animated.View>
               <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
-                {tab.key === 'news' ? 'News' : t(tab.labelKey)}
+                {tab.key === 'learn' || tab.key === 'profile' ? t(tab.key) : tab.label}
               </Text>
             </TouchableOpacity>
           );
@@ -271,8 +334,7 @@ export default function MainTabs({
       <Modal visible={!!milestoneModal} transparent animationType="fade">
         <View style={modal.backdrop}>
           <Animated.View style={[modal.card, { transform: [{ scale: milestoneScale }] }]}>
-            <Image source={{ uri: IMAGES.flame }} style={modal.flameImg} />
-            <Text style={modal.emoji}>{milestoneModal?.emoji}</Text>
+            <MascotVideo video={SHARED_VID.flameEmerald} fallback={ICONS.flameEmerald} size={80} bgColor="#111" />
             <Text style={modal.streakNum}>{currentStreak} Day Streak!</Text>
             <Text style={modal.msg}>{milestoneModal?.msg}</Text>
             <TouchableOpacity
@@ -305,6 +367,27 @@ const styles = StyleSheet.create({
   tabIconActive: { color: BRAND },
   tabLabel: { fontSize: 9, fontWeight: '500', color: MUTED },
   tabLabelActive: { color: BRAND, fontWeight: '700' },
+
+  // Liga floating button (Learn tab)
+  ligaBtn: {
+    position: 'absolute', top: 16, right: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#1C1C1E', borderRadius: 20,
+    paddingHorizontal: 12, paddingVertical: 8,
+    borderWidth: 1, borderColor: '#2C2C2E',
+  },
+  ligaBtnIcon: { color: BRAND, fontSize: 13 },
+  ligaBtnText: { color: BRAND, fontSize: 12, fontWeight: '700' },
+
+  // Back button for overlay screens (League / AI Chat)
+  backBtn: {
+    position: 'absolute', top: 56, left: 16,
+    backgroundColor: '#1C1C1E', borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderWidth: 1, borderColor: '#2C2C2E',
+    zIndex: 100,
+  },
+  backBtnText: { color: BRAND, fontSize: 13, fontWeight: '700' },
 });
 
 const modal = StyleSheet.create({
@@ -314,8 +397,6 @@ const modal = StyleSheet.create({
     alignItems: 'center', gap: 10, width: '82%',
     borderWidth: 1.5, borderColor: `${BRAND}40`,
   },
-  flameImg: { width: 80, height: 80, resizeMode: 'contain' },
-  emoji: { fontSize: 36 },
   streakNum: { color: '#FFFFFF', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
   msg: { color: '#9CA3AF', fontSize: 14, textAlign: 'center', lineHeight: 20 },
   btn: { backgroundColor: BRAND, borderRadius: 14, paddingVertical: 16, paddingHorizontal: 40, marginTop: 8 },

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Animated, Dimensions, Image,
+  ScrollView, Animated, Dimensions, Image, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -9,7 +9,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { LEARNING_SECTIONS, SectionDef, LessonDef } from '../data/learningPath';
 import { getLevelInfo, getNextLevel, getProgressToNext } from '../utils/xpSystem';
 import { UserLevel } from '../utils/questionPicker';
-import { IMAGES } from '../utils/imageAssets';
+import { IMAGES, SHARED_VID, ICONS, LESSON_ICON_MAP, LESSON_ICONS } from '../utils/imageAssets';
+import MascotVideo from '../components/MascotVideo';
 
 const BRAND = '#10B981';
 const BG = '#0F0F0F';
@@ -39,25 +40,24 @@ interface Props {
 
 function StreakBadge({ streak }: { streak: number }) {
   const bounce = useRef(new Animated.Value(1)).current;
+  const BRAND = '#10B981';
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(bounce, { toValue: 1.15, duration: 700, useNativeDriver: true }),
-        Animated.timing(bounce, { toValue: 0.95, duration: 500, useNativeDriver: true }),
-        Animated.timing(bounce, { toValue: 1.08, duration: 400, useNativeDriver: true }),
+        Animated.timing(bounce, { toValue: 1.12, duration: 700, useNativeDriver: true }),
+        Animated.timing(bounce, { toValue: 0.96, duration: 500, useNativeDriver: true }),
+        Animated.timing(bounce, { toValue: 1.06, duration: 400, useNativeDriver: true }),
         Animated.timing(bounce, { toValue: 1, duration: 400, useNativeDriver: true }),
       ])
     ).start();
   }, []);
 
-  const streakColor = streak >= 30 ? '#FF00FF' : streak >= 14 ? '#FF4500' : streak >= 7 ? '#FF6B00' : '#FF8C00';
-
   return (
     <Animated.View style={{ transform: [{ scale: bounce }] }}>
-      <View style={[streakStyles.badge, { borderColor: streakColor }]}>
-        <Image source={{ uri: IMAGES.flame }} style={streakStyles.flameImg} />
-        <Text style={[streakStyles.num, { color: streakColor }]}>{streak}</Text>
+      <View style={[streakStyles.badge, { borderColor: BRAND }]}>
+        <MascotVideo video={SHARED_VID.flameEmerald} fallback={ICONS.flameEmerald} size={22} bgColor="#0A1A0A" />
+        <Text style={[streakStyles.num, { color: BRAND }]}>{streak}</Text>
       </View>
     </Animated.View>
   );
@@ -66,10 +66,9 @@ function StreakBadge({ streak }: { streak: number }) {
 const streakStyles = StyleSheet.create({
   badge: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: '#110A00', borderRadius: 99,
+    backgroundColor: '#0A1A0A', borderRadius: 99,
     paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1.5,
   },
-  flameImg: { width: 22, height: 22, resizeMode: 'contain' },
   num: { fontSize: 15, fontWeight: '900' },
 });
 
@@ -136,12 +135,15 @@ function LessonNode({ lesson, section, index, isCompleted, isActive, isLocked, o
             onPress={tap}
             activeOpacity={0.85}
           >
-            {isCompleted
-              ? <Text style={nodeS.check}>✓</Text>
-              : isLocked
-              ? <Text style={[nodeS.icon, { opacity: 0.25 }]}>🔒</Text>
-              : <Text style={nodeS.icon}>{lesson.icon}</Text>
-            }
+            {isCompleted ? (
+              <Text style={nodeS.check}>✓</Text>
+            ) : isLocked ? (
+              <Text style={[nodeS.icon, { opacity: 0.25 }]}>○</Text>
+            ) : LESSON_ICON_MAP[lesson.id] ? (
+              <Image source={LESSON_ICON_MAP[lesson.id]} style={nodeS.iconImg} resizeMode="contain" />
+            ) : (
+              <Text style={nodeS.icon}>{lesson.icon}</Text>
+            )}
           </TouchableOpacity>
         </Animated.View>
         <Text style={[nodeS.label, isActive && { color: section.color }]} numberOfLines={2}>
@@ -161,7 +163,8 @@ const nodeS = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   check: { color: '#000', fontSize: 24, fontWeight: '900' },
-  icon: { fontSize: 26 },
+  icon: { fontSize: 22, color: '#fff' },
+  iconImg: { width: NODE_SIZE - 18, height: NODE_SIZE - 18 },
   label: { color: TEXT, fontSize: 10, fontWeight: '600', textAlign: 'center', marginTop: 4, maxWidth: NODE_SIZE + 20, lineHeight: 13 },
   xp: { color: MUTED, fontSize: 9, marginTop: 1 },
 });
@@ -239,23 +242,7 @@ export default function LearningPathScreen({
                 })}
               </View>
 
-              {/* Premium gate */}
-              {isLocked && (
-                <View style={styles.gate}>
-                  <Image source={{ uri: IMAGES.chartHero }} style={styles.gateImage} blurRadius={2} />
-                  <View style={styles.gateOverlay}>
-                    <Text style={styles.gateTitle}>{t('unlockPremium')}</Text>
-                    <Text style={styles.gateSub}>{t('premiumDesc')}</Text>
-                    <TouchableOpacity
-                      style={[styles.gateBtn, { backgroundColor: section.color }]}
-                      onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
-                      activeOpacity={0.85}
-                    >
-                      <Text style={styles.gateBtnText}>2 CHF / Monat →</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
+              {/* No premium gate — all courses free */}
             </View>
           );
         })}
@@ -279,10 +266,9 @@ function DailyCard({ done, onPress, t }: { done: boolean; onPress: () => void; t
   return (
     <Animated.View style={[dailyS.card, done && dailyS.cardDone, { transform: [{ scale: pulse }] }]}>
       <View style={dailyS.left}>
-        {done
-          ? <Image source={{ uri: IMAGES.flame }} style={[dailyS.icon, { opacity: 0.5 }]} />
-          : <Image source={{ uri: IMAGES.flame }} style={dailyS.icon} />
-        }
+        <View style={done ? { opacity: 0.5 } : {}}>
+          <Image source={LESSON_ICONS.daily} style={dailyS.dailyIcon} resizeMode="contain" />
+        </View>
         <View>
           <Text style={dailyS.title}>{done ? t('comeTomorrow') : t('dailyChallenge')}</Text>
           <Text style={dailyS.sub}>{done ? t('streakSafe') : t('questionsMin')}</Text>
@@ -305,7 +291,7 @@ const dailyS = StyleSheet.create({
   },
   cardDone: { opacity: 0.6, borderColor: BORDER },
   left: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  icon: { width: 36, height: 36, resizeMode: 'contain' },
+  dailyIcon: { width: 40, height: 40 },
   title: { color: TEXT, fontSize: 15, fontWeight: '700' },
   sub: { color: MUTED, fontSize: 12, marginTop: 1 },
   btn: { backgroundColor: BRAND, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10 },

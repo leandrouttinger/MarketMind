@@ -5,8 +5,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { ICONS, BUCK, BUCK_VID, SHARED_VID } from '../utils/imageAssets';
+import { ICONS, SHARED_VID, getMascotVid, getMascotImg } from '../utils/imageAssets';
 import MascotVideo from '../components/MascotVideo';
+import { Faction } from './FactionScreen';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const BRAND = '#10B981';
@@ -36,6 +37,7 @@ interface Step {
 
 interface Props {
   userName: string;
+  faction: Faction;
   onComplete: (goals: string[]) => void;
 }
 
@@ -92,7 +94,7 @@ function buildSteps(t: (k: string) => string): Step[] {
   ];
 }
 
-export default function OnboardingFlow({ userName, onComplete }: Props) {
+export default function OnboardingFlow({ userName, faction, onComplete }: Props) {
   const { t } = useLanguage();
   const STEPS = buildSteps(t);
   const [step, setStep] = useState(0);
@@ -161,7 +163,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
           {/* ── Transition ── */}
           {isTransition && (
             <View style={styles.transitionContent}>
-              <MascotVideo video={BUCK_VID.idle} fallback={BUCK.default} size={200} />
+              <MascotVideo video={getMascotVid(faction, 'idle')} fallback={getMascotImg(faction, 'default')} size={200} bgColor="#0F0F0F" />
               <Text style={styles.transitionName}>{t('readyName').replace('{name}', userName)}</Text>
               <Text style={styles.transitionDesc}>{t('fiveQuestionsNoPressure')}</Text>
             </View>
@@ -211,8 +213,7 @@ export default function OnboardingFlow({ userName, onComplete }: Props) {
           {/* ── Notifications ── */}
           {isNotif && (
             <View style={styles.notifCard}>
-              <MascotVideo video={BUCK_VID.idle} fallback={BUCK.default} size={120} />
-              <MascotVideo video={SHARED_VID.bellRing} fallback={ICONS.bell} size={70} />
+              <MascotVideo video={SHARED_VID.bellRing} fallback={ICONS.bell} size={100} bgColor="#1C1C1E" />
               <Text style={styles.notifStat}>
                 {t('notifStat')}{' '}
                 <Text style={styles.notifHighlight}>{t('notifHighlight')}</Text>

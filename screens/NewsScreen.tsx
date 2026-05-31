@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../contexts/LanguageContext';
-import { BACKGROUNDS } from '../utils/imageAssets';
+import { BACKGROUNDS, CAT_BG } from '../utils/imageAssets';
 
 const NEWS_CACHE_KEY = 'news_cache';
 const NEWS_DATE_KEY = 'news_cache_date';
@@ -21,8 +21,12 @@ const BRAND = '#10B981';
 const UP = '#22C55E';
 const DOWN = '#EF4444';
 
-const RSS_URL = encodeURIComponent('https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC&region=US&lang=en-US');
-const NEWS_API = `https://api.rss2json.com/v1/api.json?rss_url=${RSS_URL}&count=20`;
+// Multiple RSS sources — tries each in order until one works
+const RSS_SOURCES = [
+  'https://feeds.finance.yahoo.com/rss/2.0/headline?s=^GSPC&region=US&lang=en-US',
+  'https://www.cnbc.com/id/100003114/device/rss/rss.html',
+  'https://feeds.reuters.com/reuters/businessNews',
+].map(url => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=20`);
 
 interface NewsItem {
   title: string;
@@ -50,18 +54,8 @@ const MOCK_MARKETS: MarketPrice[] = [
   { symbol: 'GLD', name: 'Gold', price: '$2,341', change: '+0.8%', up: true },
 ];
 
-const FALLBACK: NewsItem[] = [
-  { title: 'Federal Reserve Signals Patience on Rate Cuts Amid Strong Jobs Data', description: 'Fed officials indicate they need more evidence of cooling inflation before reducing the federal funds rate, citing strong employment numbers.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/federal-reserve', category: 'Macro' },
-  { title: 'S&P 500 Hits New Record High on Strong Tech Earnings', description: 'The benchmark index reaches new all-time highs as mega-cap technology companies beat quarterly earnings estimates.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/sp500-record', category: 'Markets' },
-  { title: 'Bitcoin ETF Inflows Top $10B — Institutional Adoption Accelerates', description: 'Spot Bitcoin ETFs continue attracting record institutional capital, with BlackRock and Fidelity leading inflows this week.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/bitcoin-etf', category: 'Crypto' },
-  { title: "Buffett's Berkshire Hathaway Holds Record $327B Cash Pile", description: 'Warren Buffett increases cash position to historic levels, signaling caution about current valuations across most asset classes.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/berkshire', category: 'Stocks' },
-  { title: 'ECB Cuts Rates Third Time This Year as Euro Zone Growth Slows', description: 'The European Central Bank reduces deposit rate again, with policymakers citing slowing inflation and weakening economic momentum.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/ecb-rates', category: 'Macro' },
-  { title: 'Nvidia Reports 200% YoY Revenue Growth Driven by AI Demand', description: 'The AI chipmaker continues to dominate the data center market, with Q3 results far exceeding analyst forecasts once again.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/nvidia', category: 'Tech' },
-  { title: 'Gold Breaks $2,400 as Dollar Weakens on Rate Cut Expectations', description: 'Precious metals rally as traders price in a more dovish Federal Reserve path for the remainder of the year.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/gold', category: 'Commodities' },
-  { title: "China's Property Sector Stabilizes After Government Stimulus Package", description: "Beijing's latest intervention measures show early signs of stabilizing the distressed real estate market.", pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/china-property', category: 'Global' },
-  { title: 'Apple Announces $110B Share Buyback — Largest in Company History', description: 'The tech giant returns record capital to shareholders as services revenue continues to grow at double-digit rates.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/apple-buyback', category: 'Stocks' },
-  { title: 'Oil Slides Below $75 as OPEC+ Considers Production Increase', description: 'Crude oil prices fall on reports that OPEC+ members are discussing a gradual easing of production cuts in Q4.', pubDate: new Date().toISOString(), link: 'https://finance.yahoo.com/news/oil-opec', category: 'Commodities' },
-];
+// No fake news fallback — we show an empty state instead of fabricated articles
+const FALLBACK: NewsItem[] = [];
 
 const CATEGORIES = ['All', 'Markets', 'Crypto', 'Macro', 'Stocks', 'Tech', 'Global', 'Commodities'];
 const CAT_COLORS: Record<string, string> = {
@@ -104,7 +98,10 @@ export default function NewsScreen() {
       const cachedDate = await AsyncStorage.getItem(NEWS_DATE_KEY);
       if (cachedDate === todayStr()) {
         const cached = await AsyncStorage.getItem(NEWS_CACHE_KEY);
-        if (cached) { setNews(JSON.parse(cached)); setLoading(false); return; }
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.length > 0) { setNews(parsed); setLoading(false); return; }
+        }
       }
       await fetchNews();
     } catch {
@@ -113,29 +110,31 @@ export default function NewsScreen() {
   };
 
   const fetchNews = async () => {
-    try {
-      const res = await fetch(NEWS_API);
-      const data = await res.json();
-      if (data.status === 'ok' && data.items?.length > 0) {
-        const items: NewsItem[] = data.items.slice(0, 15).map((item: any) => ({
-          title: item.title,
-          description: (item.description ?? '').replace(/<[^>]*>/g, '').slice(0, 160),
-          pubDate: item.pubDate,
-          link: item.link,
-          category: item.categories?.[0] ?? 'Markets',
-          imageUrl: item.thumbnail || item.enclosure?.link || null,
-        }));
-        setNews(items);
-        await AsyncStorage.setItem(NEWS_CACHE_KEY, JSON.stringify(items));
-        await AsyncStorage.setItem(NEWS_DATE_KEY, todayStr());
-      } else {
-        setNews(FALLBACK);
+    for (const apiUrl of RSS_SOURCES) {
+      try {
+        const res = await fetch(apiUrl, { headers: { 'Accept': 'application/json' } });
+        const data = await res.json();
+        if (data.status === 'ok' && data.items?.length > 0) {
+          const items: NewsItem[] = data.items.slice(0, 15).map((item: any) => ({
+            title: item.title,
+            description: (item.description ?? '').replace(/<[^>]*>/g, '').slice(0, 160),
+            pubDate: item.pubDate,
+            link: item.link,
+            category: item.categories?.[0] ?? 'Markets',
+            imageUrl: item.thumbnail || item.enclosure?.link || null,
+          }));
+          setNews(items);
+          await AsyncStorage.setItem(NEWS_CACHE_KEY, JSON.stringify(items));
+          await AsyncStorage.setItem(NEWS_DATE_KEY, todayStr());
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // try next source
       }
-    } catch {
-      setNews(FALLBACK);
-    } finally {
-      setLoading(false);
     }
+    setNews([]);
+    setLoading(false);
   };
 
   const filtered = activeCategory === 'All' ? news : news.filter(n => n.category === activeCategory);
@@ -193,12 +192,21 @@ export default function NewsScreen() {
           </View>
         ) : (
           <View style={styles.newsBody}>
+            {filtered.length === 0 && (
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyText}>No live news available right now.</Text>
+                <TouchableOpacity onPress={() => { AsyncStorage.removeItem(NEWS_DATE_KEY); fetchNews(); }} style={styles.retryBtn}>
+                  <Text style={styles.retryBtnText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             {/* Hero story */}
             {filtered[0] && (
               <TouchableOpacity style={styles.heroCard} onPress={() => openArticle(filtered[0].link)} activeOpacity={0.85}>
                 {filtered[0].imageUrl
                   ? <Image source={{ uri: filtered[0].imageUrl }} style={styles.heroImage} />
-                  : <Image source={BACKGROUNDS.bullMarket} style={styles.heroImage} />
+                  : <Image source={CAT_BG[filtered[0].category ?? 'Markets'] ?? BACKGROUNDS.bullMarket} style={styles.heroImage} />
                 }
                 <View style={styles.heroContent}>
                   <View style={styles.heroCatRow}>
@@ -325,6 +333,10 @@ const styles = StyleSheet.create({
   filterTextActive: { color: '#000', fontWeight: '700' },
 
   loadingBox: { padding: 40, alignItems: 'center' },
+  emptyBox: { padding: 40, alignItems: 'center', gap: 16 },
+  emptyText: { color: MUTED, fontSize: 14, textAlign: 'center' },
+  retryBtn: { backgroundColor: BRAND, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 },
+  retryBtnText: { color: '#000', fontWeight: '700', fontSize: 14 },
 
   newsBody: { padding: 12, gap: 14, paddingBottom: 120 },
 

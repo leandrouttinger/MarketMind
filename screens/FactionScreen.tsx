@@ -13,16 +13,16 @@ const MUTED      = '#6B7280';
 const BULL_COLOR = '#10B981';
 const BEAR_COLOR = '#3B82F6';
 
-export type Faction = 'bull' | 'bear';
+export type Faction = 'bull' | 'bear' | null;
 
 interface Props {
   userName: string;
-  onComplete: (faction: Faction) => void;
+  onComplete: (faction: 'bull' | 'bear') => void;
 }
 
 export default function FactionScreen({ userName, onComplete }: Props) {
   const { t } = useLanguage();
-  const [selected, setSelected] = useState<Faction | null>(null);
+  const [selected, setSelected] = useState<'bull' | 'bear' | null>(null);
   const fadeIn    = useRef(new Animated.Value(0)).current;
   const bullScale = useRef(new Animated.Value(1)).current;
   const bearScale = useRef(new Animated.Value(1)).current;
@@ -87,6 +87,7 @@ export default function FactionScreen({ userName, onComplete }: Props) {
                 video={BUCK_VID.faction}
                 fallback={BUCK.faction}
                 size={130}
+                bgColor={selected === 'bull' ? '#0D1F17' : '#111'}
               />
             </Animated.View>
             <Text style={[styles.factionName, selected === 'bull' && { color: BULL_COLOR }]}>
@@ -111,6 +112,7 @@ export default function FactionScreen({ userName, onComplete }: Props) {
                 video={GRIZ_VID.faction}
                 fallback={GRIZ.faction}
                 size={130}
+                bgColor={selected === 'bear' ? '#0D1527' : '#111'}
               />
             </Animated.View>
             <Text style={[styles.factionName, selected === 'bear' && { color: BEAR_COLOR }]}>

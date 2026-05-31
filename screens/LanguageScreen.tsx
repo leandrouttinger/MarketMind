@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Language } from '../i18n/translations';
-import { BUCK, BUCK_VID, ICONS } from '../utils/imageAssets';
+import { GRIZ, SHARED_VID, ICONS } from '../utils/imageAssets';
 import MascotVideo from '../components/MascotVideo';
 
 const BRAND  = '#10B981';
@@ -51,9 +51,9 @@ export default function LanguageScreen({ onContinue }: Props) {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Animated.View style={[styles.inner, { opacity: fadeIn, transform: [{ translateY: slideUp }] }]}>
 
-        {/* Buck mascot — transparent */}
+        {/* Griz mascot on language screen */}
         <View style={styles.mascotWrap}>
-          <MascotVideo video={BUCK_VID.idle} fallback={BUCK.default} size={150} />
+          <MascotVideo video={SHARED_VID.grizLanguage} fallback={GRIZ.default} size={150} bgColor="#0F0F0F" />
           <Text style={styles.title}>Pick your language.</Text>
           <Text style={styles.subtitle}>Switch anytime in settings.</Text>
         </View>

@@ -58,7 +58,7 @@ export default function App() {
   const renderScreen = () => {
     switch (screen) {
       case 'language':
-        return <LanguageScreen onContinue={() => setScreen('splash')} />;
+        return <LanguageScreen onContinue={() => setScreen('faction')} />;
 
       case 'splash':
         return <SplashScreen onStart={() => setScreen('name')} />;
@@ -78,6 +78,7 @@ export default function App() {
         return (
           <OnboardingFlow
             userName={userName}
+            faction={faction}
             onComplete={(goals) => {
               setUserGoals(goals);
               saveState({ userGoals: goals });
@@ -86,14 +87,16 @@ export default function App() {
           />
         );
 
+
       case 'placement':
         return (
           <PlacementQuizScreen
             userName={userName}
+            faction={faction}
             onComplete={(level) => {
               setUserLevel(level);
               saveState({ userLevel: level });
-              setScreen('faction');
+              setScreen('main');
             }}
           />
         );
@@ -104,8 +107,8 @@ export default function App() {
             userName={userName}
             onComplete={(f) => {
               setFaction(f);
-              saveState({ faction: f, factionSwitchedAt: new Date().toISOString(), onboardingDone: true });
-              setScreen('main');
+              saveState({ faction: f, factionSwitchedAt: new Date().toISOString() });
+              setScreen('splash');
             }}
           />
         );
